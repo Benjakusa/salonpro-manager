@@ -5,7 +5,6 @@ Represents bookings linking clients, stylists, and services.
 
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, CheckConstraint, Text
 from sqlalchemy.orm import relationship, validates
-from sqlalchemy.ext.hybrid import hybrid_property
 from datetime import datetime, time, timedelta
 from database import Base
 
@@ -20,9 +19,9 @@ class Appointment(Base):
     service_id = Column(Integer, ForeignKey('services.id'), nullable=False)
     
     # Appointment details
-    appointment_date = Column(DateTime, nullable=False)  # Date and time of appointment
-    duration_minutes = Column(Integer, nullable=False)  # Can be different from service duration
-    status = Column(String(20), default='scheduled')  # scheduled, completed, cancelled, no-show
+    appointment_date = Column(DateTime, nullable=False)
+    duration_minutes = Column(Integer, nullable=False)
+    status = Column(String(20), default='scheduled')
     notes = Column(Text)
     created_at = Column(DateTime, default=datetime.now)
     total_price = Column(Float, nullable=False)
@@ -186,22 +185,29 @@ class Appointment(Base):
             return True
         return False
     
-       @classmethod
+    @classmethod
     def has_conflict(cls, session, stylist_id, start_time, duration_minutes=60, exclude_id=None):
         """Check if a stylist has a scheduling conflict."""
         end_time = start_time + timedelta(minutes=duration_minutes)
         
-        query = session.query(cls).filter(
+        # Get all scheduled appointments for this stylist
+        appointments = session.query(cls).filter(
             cls.stylist_id == stylist_id,
-            cls.status == 'scheduled',
-            cls.appointment_date < end_time,
-            cls.appointment_date + timedelta(minutes=cls.duration_minutes) > start_time
-        )
+            cls.status == 'scheduled'
+        ).all()
         
         if exclude_id:
-            query = query.filter(cls.id != exclude_id)
+            appointments = [app for app in appointments if app.id != exclude_id]
         
-        return query.first() is not None
+        # Check each appointment for overlap
+        for appointment in appointments:
+            appointment_end = appointment.appointment_date + timedelta(minutes=appointment.duration_minutes)
+            
+            # Check if time ranges overlap
+            if (start_time < appointment_end) and (end_time > appointment.appointment_date):
+                return True
+        
+        return False
     
     @classmethod
     def get_daily_revenue(cls, session, date):
