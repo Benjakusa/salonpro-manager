@@ -98,13 +98,14 @@ class Service(Base):
         """Deactivate a service."""
         service = cls.find_by_id(session, service_id)
         if service:
-            service.is_active = 0  
+            service.is_active = 0  # Soft delete
             session.commit()
             return True
         return False
     
-    # Instance method
+    # Instance method - FIXED: import inside method to avoid circular import
     def get_appointments(self, session):
         """Get all appointments for this service."""
+        # Import here to avoid circular import
         from models.appointment import Appointment
         return session.query(Appointment).filter_by(service_id=self.id).all()
