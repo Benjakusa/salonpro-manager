@@ -398,6 +398,315 @@ class SalonProCLI:
         self.session.close()
         sys.exit(0)
 
+    # ========== STYLIST MANAGEMENT METHODS ==========
+    
+    def handle_stylist_management(self):
+        """Handle stylist management operations."""
+        while True:
+            self.stylist_management_menu()
+            choice = input("\nEnter your choice (1-9): ").strip()
+            
+            if choice == "9":
+                break
+            elif choice == "1":
+                self.view_all_stylists()
+            elif choice == "2":
+                self.add_new_stylist()
+            elif choice == "3":
+                self.find_stylist_by_id()
+            elif choice == "4":
+                self.find_stylist_by_specialty()
+            elif choice == "5":
+                self.view_stylist_schedule()
+            elif choice == "6":
+                self.update_stylist()
+            elif choice == "7":
+                self.view_stylist_clients()
+            elif choice == "8":
+                self.deactivate_stylist()
+            else:
+                print("❌ Invalid choice. Please enter a number between 1-9.")
+    
+    def view_all_stylists(self):
+        """Display all stylists."""
+        stylists = Stylist.get_all(self.session)
+        if not stylists:
+            print("\n📭 No stylists found.")
+            return
+        
+        print(f"\n💇 ALL STYLISTS ({len(stylists)} total)")
+        print("-" * 80)
+        print(f"{'ID':<5} {'Name':<25} {'Specialty':<20} {'Hourly Rate':<12} {'Status':<10}")
+        print("-" * 80)
+        
+        for stylist in stylists:
+            status = "Active" if stylist.is_active else "Inactive"
+            print(f"{stylist.id:<5} {stylist.full_name:<25} {stylist.specialty or 'N/A':<20} ${stylist.hourly_rate:<11.2f} {status:<10}")
+    
+    def add_new_stylist(self):
+        """Add a new stylist to the database."""
+        print("\n➕ ADD NEW STYLIST")
+        print("-" * 40)
+        
+        try:
+            first_name = input("First Name: ").strip()
+            last_name = input("Last Name: ").strip()
+            phone = input("Phone Number: ").strip()
+            email = input("Email: ").strip()
+            specialty = input("Specialty (e.g., Coloring, Haircut): ").strip()
+            hourly_rate = input("Hourly Rate (default 25.00): ").strip()
+            
+            if not first_name or not last_name or not phone or not email:
+                print("❌ First name, last name, phone, and email are required.")
+                return
+            
+            # Convert hourly rate
+            try:
+                hourly_rate = float(hourly_rate) if hourly_rate else 25.0
+            except ValueError:
+                print("❌ Hourly rate must be a number.")
+                return
+            
+            # Check if phone already exists
+            existing = self.session.query(Stylist).filter_by(phone=phone).first()
+            if existing:
+                print(f"❌ Phone number already registered to {existing.full_name}")
+                return
+            
+            stylist = Stylist.create(
+                session=self.session,
+                first_name=first_name,
+                last_name=last_name,
+                phone=phone,
+                email=email,
+                specialty=specialty,
+                hourly_rate=hourly_rate
+            )
+            
+            print(f"\n✅ Stylist added successfully!")
+            print(f"   Name: {stylist.full_name}")
+            print(f"   ID: {stylist.id}")
+            print(f"   Specialty: {stylist.specialty}")
+            
+        except Exception as e:
+            print(f"❌ Error adding stylist: {e}")
+    
+    def find_stylist_by_id(self):
+        """Find a stylist by their ID."""
+        try:
+            stylist_id = int(input("\nEnter Stylist ID: ").strip())
+            stylist = Stylist.find_by_id(self.session, stylist_id)
+            
+            if stylist:
+                self.display_stylist_details(stylist)
+            else:
+                print(f"❌ No stylist found with ID {stylist_id}")
+        except ValueError:
+            print("❌ Please enter a valid number.")
+    
+    def find_stylist_by_specialty(self):
+        """Find stylists by specialty."""
+        specialty = input("\nEnter specialty to search: ").strip()
+        if not specialty:
+            print("❌ Please enter a specialty to search.")
+            return
+        
+        stylists = Stylist.find_by_specialty(self.session, specialty)
+        
+        if not stylists:
+            print(f"❌ No stylists found with specialty '{specialty}'")
+            return
+        
+        print(f"\n🔍 FOUND {len(stylists)} STYLIST(S) WITH SPECIALTY '{specialty.upper()}'")
+        print("-" * 70)
+        for stylist in stylists:
+            status = "Active" if stylist.is_active else "Inactive"
+            print(f"ID: {stylist.id} | Name: {stylist.full_name} | Rate: ${stylist.hourly_rate}/hr | Status: {status}")
+    
+    def display_stylist_details(self, stylist):
+        """Display detailed information about a stylist."""
+        print(f"\n📄 STYLIST DETAILS")
+        print("-" * 40)
+        print(f"ID: {stylist.id}")
+        print(f"Name: {stylist.full_name}")
+        print(f"Phone: {stylist.formatted_phone}")
+        print(f"Email: {stylist.email}")
+        print(f"Specialty: {stylist.specialty}")
+        print(f"Hourly Rate: ${stylist.hourly_rate:.2f}")
+        print(f"Experience: {stylist.experience_years} years")
+        print(f"Status: {'Active' if stylist.is_active else 'Inactive'}")
+        print(f"Hire Date: {stylist.hire_date.strftime('%Y-%m-%d')}")
+        
+        # Show appointment count
+        appointments = stylist.get_appointments(self.session)
+        print(f"Total Appointments: {len(appointments)}")
+        
+        # Show today's appointments
+        todays = stylist.get_todays_appointments(self.session)
+        if todays:
+            print(f"Today's Appointments: {len(todays)}")
+    
+    def view_stylist_schedule(self):
+        """View a stylist's schedule."""
+        try:
+            stylist_id = int(input("\nEnter Stylist ID: ").strip())
+            stylist = Stylist.find_by_id(self.session, stylist_id)
+            
+            if not stylist:
+                print(f"❌ No stylist found with ID {stylist_id}")
+                return
+            
+            # Get upcoming appointments
+            appointments = Appointment.find_by_stylist(self.session, stylist_id)
+            upcoming = [app for app in appointments if app.is_upcoming]
+            
+            if not upcoming:
+                print(f"\n📭 No upcoming appointments for {stylist.full_name}")
+                return
+            
+            print(f"\n📅 UPCOMING SCHEDULE FOR {stylist.full_name.upper()} ({len(upcoming)} appointments)")
+            print("-" * 90)
+            print(f"{'Date':<12} {'Time':<10} {'Client':<20} {'Service':<25} {'Duration':<10} {'Price':<10}")
+            print("-" * 90)
+            
+            for app in sorted(upcoming, key=lambda x: x.appointment_date):
+                client_name = app.client.full_name if app.client else "N/A"
+                service_name = app.service.name if app.service else "N/A"
+                print(f"{app.date_only:<12} {app.time_only:<10} {client_name:<20} {service_name:<25} {app.duration_minutes} min{'':<5} ${app.total_price:<9.2f}")
+                
+        except ValueError:
+            print("❌ Please enter a valid number.")
+    
+    def update_stylist(self):
+        """Update stylist information."""
+        try:
+            stylist_id = int(input("\nEnter Stylist ID to update: ").strip())
+            stylist = Stylist.find_by_id(self.session, stylist_id)
+            
+            if not stylist:
+                print(f"❌ No stylist found with ID {stylist_id}")
+                return
+            
+            self.display_stylist_details(stylist)
+            print("\n📝 UPDATE STYLIST (leave blank to keep current value)")
+            print("-" * 40)
+            
+            updates = {}
+            
+            new_first = input(f"First Name [{stylist.first_name}]: ").strip()
+            if new_first:
+                updates['first_name'] = new_first
+            
+            new_last = input(f"Last Name [{stylist.last_name}]: ").strip()
+            if new_last:
+                updates['last_name'] = new_last
+            
+            new_phone = input(f"Phone [{stylist.phone}]: ").strip()
+            if new_phone and new_phone != stylist.phone:
+                # Check if new phone already exists
+                existing = self.session.query(Stylist).filter_by(phone=new_phone).first()
+                if existing and existing.id != stylist_id:
+                    print(f"❌ Phone number already registered to {existing.full_name}")
+                    return
+                updates['phone'] = new_phone
+            
+            new_email = input(f"Email [{stylist.email}]: ").strip()
+            if new_email:
+                updates['email'] = new_email
+            
+            new_specialty = input(f"Specialty [{stylist.specialty}]: ").strip()
+            if new_specialty:
+                updates['specialty'] = new_specialty
+            
+            new_rate = input(f"Hourly Rate [${stylist.hourly_rate:.2f}]: ").strip()
+            if new_rate:
+                try:
+                    updates['hourly_rate'] = float(new_rate.replace('$', ''))
+                except ValueError:
+                    print("❌ Hourly rate must be a number.")
+                    return
+            
+            if updates:
+                Stylist.update(self.session, stylist_id, **updates)
+                print(f"\n✅ Stylist {stylist_id} updated successfully!")
+            else:
+                print("\nℹ️  No changes made.")
+                
+        except ValueError:
+            print("❌ Please enter a valid number.")
+        except Exception as e:
+            print(f"❌ Error updating stylist: {e}")
+    
+    def view_stylist_clients(self):
+        """View all clients of a specific stylist."""
+        try:
+            stylist_id = int(input("\nEnter Stylist ID: ").strip())
+            stylist = Stylist.find_by_id(self.session, stylist_id)
+            
+            if not stylist:
+                print(f"❌ No stylist found with ID {stylist_id}")
+                return
+            
+            # Get all appointments for this stylist
+            appointments = Appointment.find_by_stylist(self.session, stylist_id)
+            
+            if not appointments:
+                print(f"\n📭 No appointments found for {stylist.full_name}")
+                return
+            
+            # Get unique clients
+            client_ids = set()
+            for app in appointments:
+                if app.client:
+                    client_ids.add(app.client.id)
+            
+            print(f"\n👥 CLIENTS OF {stylist.full_name.upper()} ({len(client_ids)} unique clients)")
+            print("-" * 70)
+            
+            for client_id in client_ids:
+                client = Client.find_by_id(self.session, client_id)
+                if client:
+                    # Count appointments with this stylist
+                    client_appointments = [app for app in appointments if app.client_id == client_id]
+                    print(f"• {client.full_name} ({len(client_appointments)} appointments)")
+                    
+        except ValueError:
+            print("❌ Please enter a valid number.")
+    
+    def deactivate_stylist(self):
+        """Deactivate a stylist."""
+        try:
+            stylist_id = int(input("\nEnter Stylist ID to deactivate: ").strip())
+            stylist = Stylist.find_by_id(self.session, stylist_id)
+            
+            if not stylist:
+                print(f"❌ No stylist found with ID {stylist_id}")
+                return
+            
+            # Show stylist details first
+            self.display_stylist_details(stylist)
+            
+            # Ask for confirmation
+            confirm = input(f"\n⚠️  Are you sure you want to deactivate {stylist.full_name}? (yes/no): ").strip().lower()
+            
+            if confirm == 'yes':
+                # Check if stylist has upcoming appointments
+                appointments = stylist.get_appointments(self.session)
+                upcoming = [app for app in appointments if app.is_upcoming]
+                
+                if upcoming:
+                    print(f"❌ Cannot deactivate stylist with {len(upcoming)} upcoming appointment(s).")
+                    print("   Please cancel or reassign appointments first.")
+                    return
+                
+                stylist.is_active = 0
+                self.session.commit()
+                print(f"✅ Stylist {stylist.full_name} deactivated successfully!")
+            else:
+                print("❌ Deactivation cancelled.")
+                
+        except ValueError:
+            print("❌ Please enter a valid number.")
 
 def main():
     """Main function to run the CLI."""
