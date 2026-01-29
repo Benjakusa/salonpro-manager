@@ -707,7 +707,1025 @@ class SalonProCLI:
                 
         except ValueError:
             print("❌ Please enter a valid number.")
+    # ========== SERVICE MANAGEMENT METHODS ==========
+    
+    def handle_service_management(self):
+        """Handle service management operations."""
+        while True:
+            self.service_management_menu()
+            choice = input("\nEnter your choice (1-9): ").strip()
+            
+            if choice == "9":
+                break
+            elif choice == "1":
+                self.view_all_services()
+            elif choice == "2":
+                self.view_service_menu()
+            elif choice == "3":
+                self.add_new_service()
+            elif choice == "4":
+                self.find_service_by_id()
+            elif choice == "5":
+                self.find_service_by_category()
+            elif choice == "6":
+                self.update_service()
+            elif choice == "7":
+                self.view_service_popularity()
+            elif choice == "8":
+                self.deactivate_service()
+            else:
+                print("❌ Invalid choice. Please enter a number between 1-9.")
+    
+    def view_all_services(self):
+        """Display all services."""
+        services = Service.get_all(self.session)
+        if not services:
+            print("\n📭 No services found.")
+            return
+        
+        print(f"\n✂️ ALL SERVICES ({len(services)} total)")
+        print("-" * 90)
+        print(f"{'ID':<5} {'Name':<25} {'Category':<15} {'Duration':<12} {'Price':<10} {'Status':<10}")
+        print("-" * 90)
+        
+        for service in services:
+            status = "Active" if service.is_active else "Inactive"
+            print(f"{service.id:<5} {service.name:<25} {service.category or 'N/A':<15} {service.formatted_duration:<12} {service.formatted_price:<10} {status:<10}")
+    
+    def view_service_menu(self):
+        """Display active services only (menu for clients)."""
+        services = Service.get_active(self.session)
+        if not services:
+            print("\n📭 No active services found.")
+            return
+        
+        print(f"\n📋 SERVICE MENU ({len(services)} active services)")
+        print("-" * 80)
+        print(f"{'ID':<5} {'Name':<25} {'Category':<15} {'Duration':<12} {'Price':<10}")
+        print("-" * 80)
+        
+        for service in services:
+            print(f"{service.id:<5} {service.name:<25} {service.category or 'N/A':<15} {service.formatted_duration:<12} {service.formatted_price:<10}")
+    
+    def add_new_service(self):
+        """Add a new service to the database."""
+        print("\n➕ ADD NEW SERVICE")
+        print("-" * 40)
+        
+        try:
+            name = input("Service Name: ").strip()
+            category = input("Category (e.g., Haircut, Color): ").strip()
+            duration = input("Duration in minutes: ").strip()
+            price = input("Price: ").strip()
+            description = input("Description (optional): ").strip() or None
+            
+            if not name or not category or not duration or not price:
+                print("❌ Service name, category, duration, and price are required.")
+                return
+            
+            # Convert to proper types
+            try:
+                duration = int(duration)
+                price = float(price)
+            except ValueError:
+                print("❌ Duration must be a whole number and price must be a number.")
+                return
+            
+            # Check if service name already exists
+            existing = self.session.query(Service).filter_by(name=name).first()
+            if existing:
+                print(f"❌ Service '{name}' already exists (ID: {existing.id})")
+                return
+            
+            service = Service.create(
+                session=self.session,
+                name=name,
+                description=description,
+                duration_minutes=duration,
+                price=price,
+                category=category
+            )
+            
+            print(f"\n✅ Service added successfully!")
+            print(f"   Name: {service.name}")
+            print(f"   ID: {service.id}")
+            print(f"   Price: {service.formatted_price}")
+            print(f"   Duration: {service.formatted_duration}")
+            
+        except Exception as e:
+            print(f"❌ Error adding service: {e}")
+    
+    def find_service_by_id(self):
+        """Find a service by its ID."""
+        try:
+            service_id = int(input("\nEnter Service ID: ").strip())
+            service = Service.find_by_id(self.session, service_id)
+            
+            if service:
+                self.display_service_details(service)
+            else:
+                print(f"❌ No service found with ID {service_id}")
+        except ValueError:
+            print("❌ Please enter a valid number.")
+    
+    def find_service_by_category(self):
+        """Find services by category."""
+        category = input("\nEnter category to search: ").strip()
+        if not category:
+            print("❌ Please enter a category to search.")
+            return
+        
+        services = Service.find_by_category(self.session, category)
+        
+        if not services:
+            print(f"❌ No services found in category '{category}'")
+            return
+        
+        print(f"\n🔍 FOUND {len(services)} SERVICE(S) IN CATEGORY '{category.upper()}'")
+        print("-" * 70)
+        for service in services:
+            status = "Active" if service.is_active else "Inactive"
+            print(f"ID: {service.id} | Name: {service.name} | Price: {service.formatted_price} | Status: {status}")
+    
+    def display_service_details(self, service):
+        """Display detailed information about a service."""
+        print(f"\n📄 SERVICE DETAILS")
+        print("-" * 40)
+        print(f"ID: {service.id}")
+        print(f"Name: {service.name}")
+        print(f"Description: {service.description or 'None'}")
+        print(f"Category: {service.category}")
+        print(f"Duration: {service.formatted_duration}")
+        print(f"Price: {service.formatted_price}")
+        print(f"Hourly Rate Equivalent: ${service.hourly_rate:.2f}/hr")
+        print(f"Status: {'Active' if service.is_active else 'Inactive'}")
+        print(f"Created: {service.created_at.strftime('%Y-%m-%d')}")
+        
+        # Show appointment count
+        appointments = service.get_appointments(self.session)
+        print(f"Total Bookings: {len(appointments)}")
+    
+    def update_service(self):
+        """Update service information."""
+        try:
+            service_id = int(input("\nEnter Service ID to update: ").strip())
+            service = Service.find_by_id(self.session, service_id)
+            
+            if not service:
+                print(f"❌ No service found with ID {service_id}")
+                return
+            
+            self.display_service_details(service)
+            print("\n📝 UPDATE SERVICE (leave blank to keep current value)")
+            print("-" * 40)
+            
+            updates = {}
+            
+            new_name = input(f"Service Name [{service.name}]: ").strip()
+            if new_name and new_name != service.name:
+                # Check if new name already exists
+                existing = self.session.query(Service).filter_by(name=new_name).first()
+                if existing and existing.id != service_id:
+                    print(f"❌ Service '{new_name}' already exists (ID: {existing.id})")
+                    return
+                updates['name'] = new_name
+            
+            new_category = input(f"Category [{service.category}]: ").strip()
+            if new_category:
+                updates['category'] = new_category
+            
+            new_duration = input(f"Duration [{service.duration_minutes} minutes]: ").strip()
+            if new_duration:
+                try:
+                    updates['duration_minutes'] = int(new_duration)
+                except ValueError:
+                    print("❌ Duration must be a whole number.")
+                    return
+            
+            new_price = input(f"Price [${service.price:.2f}]: ").strip()
+            if new_price:
+                try:
+                    updates['price'] = float(new_price.replace('$', ''))
+                except ValueError:
+                    print("❌ Price must be a number.")
+                    return
+            
+            new_desc = input(f"Description [{service.description or 'None'}]: ").strip()
+            if new_desc:
+                updates['description'] = new_desc if new_desc.lower() != 'none' else None
+            
+            if updates:
+                Service.update(self.session, service_id, **updates)
+                print(f"\n✅ Service {service_id} updated successfully!")
+            else:
+                print("\nℹ️  No changes made.")
+                
+        except ValueError:
+            print("❌ Please enter a valid number.")
+        except Exception as e:
+            print(f"❌ Error updating service: {e}")
+    
+    def view_service_popularity(self):
+        """View service popularity based on bookings."""
+        services = Service.get_all(self.session)
+        
+        if not services:
+            print("\n📭 No services found.")
+            return
+        
+        # Get appointment counts for each service
+        service_stats = []
+        for service in services:
+            appointments = service.get_appointments(self.session)
+            completed = [app for app in appointments if app.status == 'completed']
+            service_stats.append({
+                'service': service,
+                'total_bookings': len(appointments),
+                'completed_bookings': len(completed),
+                'revenue': sum(app.total_price for app in completed)
+            })
+        
+        # Sort by total bookings
+        service_stats.sort(key=lambda x: x['total_bookings'], reverse=True)
+        
+        print(f"\n📊 SERVICE POPULARITY REPORT")
+        print("-" * 100)
+        print(f"{'Rank':<6} {'Service':<25} {'Category':<15} {'Total Bookings':<15} {'Completed':<12} {'Revenue':<12}")
+        print("-" * 100)
+        
+        for i, stats in enumerate(service_stats, 1):
+            service = stats['service']
+            print(f"{i:<6} {service.name:<25} {service.category or 'N/A':<15} {stats['total_bookings']:<15} {stats['completed_bookings']:<12} ${stats['revenue']:<11.2f}")
+    
+    def deactivate_service(self):
+        """Deactivate a service."""
+        try:
+            service_id = int(input("\nEnter Service ID to deactivate: ").strip())
+            service = Service.find_by_id(self.session, service_id)
+            
+            if not service:
+                print(f"❌ No service found with ID {service_id}")
+                return
+            
+            # Show service details first
+            self.display_service_details(service)
+            
+            # Ask for confirmation
+            confirm = input(f"\n⚠️  Are you sure you want to deactivate '{service.name}'? (yes/no): ").strip().lower()
+            
+            if confirm == 'yes':
+                # Check if service has upcoming appointments
+                appointments = service.get_appointments(self.session)
+                upcoming = [app for app in appointments if app.is_upcoming]
+                
+                if upcoming:
+                    print(f"❌ Cannot deactivate service with {len(upcoming)} upcoming appointment(s).")
+                    print("   Please cancel or reassign appointments first.")
+                    return
+                
+                if Service.delete(self.session, service_id):
+                    print(f"✅ Service '{service.name}' deactivated successfully!")
+                else:
+                    print(f"❌ Failed to deactivate service.")
+            else:
+                print("❌ Deactivation cancelled.")
+                
+        except ValueError:
+            print("❌ Please enter a valid number.")
 
+    # ========== APPOINTMENT MANAGEMENT METHODS ==========
+    
+    def handle_appointment_management(self):
+        """Handle appointment management operations."""
+        while True:
+            self.appointment_management_menu()
+            choice = input("\nEnter your choice (1-12): ").strip()
+            
+            if choice == "12":
+                break
+            elif choice == "1":
+                self.view_all_appointments()
+            elif choice == "2":
+                self.view_todays_appointments()
+            elif choice == "3":
+                self.view_upcoming_appointments()
+            elif choice == "4":
+                self.schedule_new_appointment()
+            elif choice == "5":
+                self.find_appointment_by_id()
+            elif choice == "6":
+                self.find_appointments_by_date()
+            elif choice == "7":
+                self.find_appointments_by_client()
+            elif choice == "8":
+                self.find_appointments_by_stylist()
+            elif choice == "9":
+                self.update_appointment_status()
+            elif choice == "10":
+                self.cancel_appointment()
+            elif choice == "11":
+                self.delete_appointment()
+            else:
+                print("❌ Invalid choice. Please enter a number between 1-12.")
+    
+    def view_all_appointments(self):
+        """Display all appointments."""
+        appointments = Appointment.get_all(self.session)
+        if not appointments:
+            print("\n📭 No appointments found.")
+            return
+        
+        print(f"\n📅 ALL APPOINTMENTS ({len(appointments)} total)")
+        print("-" * 120)
+        print(f"{'ID':<5} {'Date':<12} {'Time':<10} {'Client':<20} {'Stylist':<20} {'Service':<20} {'Status':<12} {'Price':<10}")
+        print("-" * 120)
+        
+        for app in sorted(appointments, key=lambda x: x.appointment_date, reverse=True):
+            client_name = app.client.full_name if app.client else "N/A"
+            stylist_name = app.stylist.full_name if app.stylist else "N/A"
+            service_name = app.service.name if app.service else "N/A"
+            print(f"{app.id:<5} {app.date_only:<12} {app.time_only:<10} {client_name:<20} {stylist_name:<20} {service_name:<20} {app.status:<12} ${app.total_price:<9.2f}")
+    
+    def view_todays_appointments(self):
+        """Display today's appointments."""
+        today = date.today()
+        appointments = Appointment.find_by_date(self.session, today)
+        
+        if not appointments:
+            print("\n📭 No appointments scheduled for today.")
+            return
+        
+        # Filter for scheduled appointments only
+        todays_apps = [app for app in appointments if app.status == 'scheduled']
+        
+        if not todays_apps:
+            print(f"\n📭 No scheduled appointments for today ({len(appointments) - len(todays_apps)} cancelled/completed)")
+            return
+        
+        print(f"\n📅 TODAY'S APPOINTMENTS ({len(todays_apps)} scheduled)")
+        print("-" * 100)
+        print(f"{'Time':<10} {'Client':<20} {'Stylist':<20} {'Service':<25} {'Duration':<10} {'Price':<10}")
+        print("-" * 100)
+        
+        for app in sorted(todays_apps, key=lambda x: x.appointment_date):
+            client_name = app.client.full_name if app.client else "N/A"
+            stylist_name = app.stylist.full_name if app.stylist else "N/A"
+            service_name = app.service.name if app.service else "N/A"
+            print(f"{app.time_only:<10} {client_name:<20} {stylist_name:<20} {service_name:<25} {app.duration_minutes} min{'':<5} ${app.total_price:<9.2f}")
+    
+    def view_upcoming_appointments(self):
+        """Display all upcoming appointments."""
+        appointments = Appointment.find_upcoming(self.session)
+        
+        if not appointments:
+            print("\n📭 No upcoming appointments.")
+            return
+        
+        print(f"\n📅 UPCOMING APPOINTMENTS ({len(appointments)} total)")
+        print("-" * 110)
+        print(f"{'Date':<12} {'Time':<10} {'Client':<20} {'Stylist':<20} {'Service':<25} {'Duration':<10} {'Price':<10}")
+        print("-" * 110)
+        
+        for app in sorted(appointments, key=lambda x: x.appointment_date):
+            client_name = app.client.full_name if app.client else "N/A"
+            stylist_name = app.stylist.full_name if app.stylist else "N/A"
+            service_name = app.service.name if app.service else "N/A"
+            print(f"{app.date_only:<12} {app.time_only:<10} {client_name:<20} {stylist_name:<20} {service_name:<25} {app.duration_minutes} min{'':<5} ${app.total_price:<9.2f}")
+    
+    def schedule_new_appointment(self):
+        """Schedule a new appointment."""
+        print("\n➕ SCHEDULE NEW APPOINTMENT")
+        print("-" * 40)
+        
+        try:
+            # Show available clients
+            clients = Client.get_all(self.session)
+            if not clients:
+                print("❌ No clients available. Please add a client first.")
+                return
+            
+            print("\n👥 Available Clients:")
+            for client in clients[:10]:  # Show first 10
+                print(f"  {client.id}. {client.full_name}")
+            
+            client_id = int(input("\nSelect Client ID: ").strip())
+            client = Client.find_by_id(self.session, client_id)
+            if not client:
+                print(f"❌ No client found with ID {client_id}")
+                return
+            
+            # Show available stylists
+            stylists = Stylist.get_active(self.session)
+            if not stylists:
+                print("❌ No active stylists available. Please add a stylist first.")
+                return
+            
+            print("\n💇 Available Stylists:")
+            for stylist in stylists:
+                print(f"  {stylist.id}. {stylist.full_name} ({stylist.specialty})")
+            
+            stylist_id = int(input("\nSelect Stylist ID: ").strip())
+            stylist = Stylist.find_by_id(self.session, stylist_id)
+            if not stylist or not stylist.is_active:
+                print(f"❌ No active stylist found with ID {stylist_id}")
+                return
+            
+            # Show available services
+            services = Service.get_active(self.session)
+            if not services:
+                print("❌ No active services available. Please add a service first.")
+                return
+            
+            print("\n✂️ Available Services:")
+            for service in services:
+                print(f"  {service.id}. {service.name} (${service.price}, {service.duration_minutes}min)")
+            
+            service_id = int(input("\nSelect Service ID: ").strip())
+            service = Service.find_by_id(self.session, service_id)
+            if not service or not service.is_active:
+                print(f"❌ No active service found with ID {service_id}")
+                return
+            
+            # Get appointment date and time
+            date_str = input("Appointment Date (YYYY-MM-DD): ").strip()
+            time_str = input("Appointment Time (HH:MM in 24-hour format): ").strip()
+            
+            if not date_str or not time_str:
+                print("❌ Date and time are required.")
+                return
+            
+            # Parse date and time
+            try:
+                year, month, day = map(int, date_str.split('-'))
+                hour, minute = map(int, time_str.split(':'))
+                appointment_datetime = datetime(year, month, day, hour, minute)
+            except ValueError:
+                print("❌ Invalid date or time format.")
+                return
+            
+            # Check if appointment is in the past
+            if appointment_datetime < datetime.now():
+                print("❌ Cannot schedule appointments in the past.")
+                return
+            
+            # Check business hours (9 AM to 6 PM)
+            if hour < 9 or hour >= 18:
+                print("❌ Appointments can only be scheduled between 9 AM and 6 PM.")
+                return
+            
+            notes = input("Notes (optional): ").strip() or None
+            
+            # Create the appointment
+            appointment = Appointment.create(
+                session=self.session,
+                client_id=client_id,
+                stylist_id=stylist_id,
+                service_id=service_id,
+                appointment_date=appointment_datetime,
+                duration_minutes=service.duration_minutes,
+                total_price=service.price,
+                notes=notes
+            )
+            
+            print(f"\n✅ Appointment scheduled successfully!")
+            print(f"   ID: {appointment.id}")
+            print(f"   Client: {client.full_name}")
+            print(f"   Stylist: {stylist.full_name}")
+            print(f"   Service: {service.name}")
+            print(f"   Date & Time: {appointment.formatted_date}")
+            print(f"   Duration: {service.formatted_duration}")
+            print(f"   Price: ${service.price:.2f}")
+            
+        except ValueError as e:
+            print(f"❌ Error: {e}")
+        except Exception as e:
+            print(f"❌ Error scheduling appointment: {e}")
+    
+    def find_appointment_by_id(self):
+        """Find an appointment by its ID."""
+        try:
+            appointment_id = int(input("\nEnter Appointment ID: ").strip())
+            appointment = Appointment.find_by_id(self.session, appointment_id)
+            
+            if appointment:
+                self.display_appointment_details(appointment)
+            else:
+                print(f"❌ No appointment found with ID {appointment_id}")
+        except ValueError:
+            print("❌ Please enter a valid number.")
+    
+    def find_appointments_by_date(self):
+        """Find appointments on a specific date."""
+        date_str = input("\nEnter date (YYYY-MM-DD): ").strip()
+        if not date_str:
+            print("❌ Please enter a date.")
+            return
+        
+        try:
+            year, month, day = map(int, date_str.split('-'))
+            search_date = date(year, month, day)
+        except ValueError:
+            print("❌ Invalid date format. Use YYYY-MM-DD.")
+            return
+        
+        appointments = Appointment.find_by_date(self.session, search_date)
+        
+        if not appointments:
+            print(f"\n📭 No appointments found on {date_str}")
+            return
+        
+        print(f"\n📅 APPOINTMENTS ON {date_str} ({len(appointments)} total)")
+        print("-" * 100)
+        print(f"{'Time':<10} {'Client':<20} {'Stylist':<20} {'Service':<25} {'Status':<12} {'Price':<10}")
+        print("-" * 100)
+        
+        for app in sorted(appointments, key=lambda x: x.appointment_date):
+            client_name = app.client.full_name if app.client else "N/A"
+            stylist_name = app.stylist.full_name if app.stylist else "N/A"
+            service_name = app.service.name if app.service else "N/A"
+            print(f"{app.time_only:<10} {client_name:<20} {stylist_name:<20} {service_name:<25} {app.status:<12} ${app.total_price:<9.2f}")
+    
+    def find_appointments_by_client(self):
+        """Find appointments for a specific client."""
+        try:
+            client_id = int(input("\nEnter Client ID: ").strip())
+            client = Client.find_by_id(self.session, client_id)
+            
+            if not client:
+                print(f"❌ No client found with ID {client_id}")
+                return
+            
+            appointments = Appointment.find_by_client(self.session, client_id)
+            
+            if not appointments:
+                print(f"\n📭 No appointments found for {client.full_name}")
+                return
+            
+            print(f"\n📅 APPOINTMENTS FOR {client.full_name.upper()} ({len(appointments)} total)")
+            print("-" * 100)
+            print(f"{'Date':<12} {'Time':<10} {'Stylist':<20} {'Service':<25} {'Status':<12} {'Price':<10}")
+            print("-" * 100)
+            
+            for app in sorted(appointments, key=lambda x: x.appointment_date, reverse=True):
+                stylist_name = app.stylist.full_name if app.stylist else "N/A"
+                service_name = app.service.name if app.service else "N/A"
+                print(f"{app.date_only:<12} {app.time_only:<10} {stylist_name:<20} {service_name:<25} {app.status:<12} ${app.total_price:<9.2f}")
+                
+        except ValueError:
+            print("❌ Please enter a valid number.")
+    
+    def find_appointments_by_stylist(self):
+        """Find appointments for a specific stylist."""
+        try:
+            stylist_id = int(input("\nEnter Stylist ID: ").strip())
+            stylist = Stylist.find_by_id(self.session, stylist_id)
+            
+            if not stylist:
+                print(f"❌ No stylist found with ID {stylist_id}")
+                return
+            
+            appointments = Appointment.find_by_stylist(self.session, stylist_id)
+            
+            if not appointments:
+                print(f"\n📭 No appointments found for {stylist.full_name}")
+                return
+            
+            print(f"\n📅 APPOINTMENTS FOR {stylist.full_name.upper()} ({len(appointments)} total)")
+            print("-" * 100)
+            print(f"{'Date':<12} {'Time':<10} {'Client':<20} {'Service':<25} {'Status':<12} {'Price':<10}")
+            print("-" * 100)
+            
+            for app in sorted(appointments, key=lambda x: x.appointment_date, reverse=True):
+                client_name = app.client.full_name if app.client else "N/A"
+                service_name = app.service.name if app.service else "N/A"
+                print(f"{app.date_only:<12} {app.time_only:<10} {client_name:<20} {service_name:<25} {app.status:<12} ${app.total_price:<9.2f}")
+                
+        except ValueError:
+            print("❌ Please enter a valid number.")
+    
+    def display_appointment_details(self, appointment):
+        """Display detailed information about an appointment."""
+        print(f"\n📄 APPOINTMENT DETAILS")
+        print("-" * 40)
+        print(f"ID: {appointment.id}")
+        print(f"Date & Time: {appointment.formatted_date}")
+        print(f"Duration: {appointment.duration_minutes} minutes")
+        print(f"Status: {appointment.status}")
+        print(f"Price: ${appointment.total_price:.2f}")
+        print(f"Notes: {appointment.notes or 'None'}")
+        print(f"Created: {appointment.created_at.strftime('%Y-%m-%d %H:%M')}")
+        
+        # Client information
+        if appointment.client:
+            print(f"\n👥 CLIENT:")
+            print(f"  Name: {appointment.client.full_name}")
+            print(f"  Phone: {appointment.client.formatted_phone}")
+            print(f"  Email: {appointment.client.email or 'Not provided'}")
+        
+        # Stylist information
+        if appointment.stylist:
+            print(f"\n💇 STYLIST:")
+            print(f"  Name: {appointment.stylist.full_name}")
+            print(f"  Specialty: {appointment.stylist.specialty}")
+            print(f"  Hourly Rate: ${appointment.stylist.hourly_rate:.2f}")
+        
+        # Service information
+        if appointment.service:
+            print(f"\n✂️ SERVICE:")
+            print(f"  Name: {appointment.service.name}")
+            print(f"  Category: {appointment.service.category}")
+            print(f"  Duration: {appointment.service.formatted_duration}")
+            print(f"  Price: ${appointment.service.price:.2f}")
+    
+    def update_appointment_status(self):
+        """Update appointment status."""
+        try:
+            appointment_id = int(input("\nEnter Appointment ID: ").strip())
+            appointment = Appointment.find_by_id(self.session, appointment_id)
+            
+            if not appointment:
+                print(f"❌ No appointment found with ID {appointment_id}")
+                return
+            
+            self.display_appointment_details(appointment)
+            print("\n🔄 UPDATE STATUS")
+            print("-" * 40)
+            print("Available statuses: scheduled, completed, cancelled, no-show")
+            
+            new_status = input(f"New Status [{appointment.status}]: ").strip().lower()
+            if not new_status:
+                print("ℹ️  No change made.")
+                return
+            
+            # Validate status
+            valid_statuses = ['scheduled', 'completed', 'cancelled', 'no-show']
+            if new_status not in valid_statuses:
+                print(f"❌ Invalid status. Must be one of: {', '.join(valid_statuses)}")
+                return
+            
+            # Update the appointment
+            appointment.status = new_status
+            self.session.commit()
+            
+            print(f"\n✅ Appointment {appointment_id} status updated to '{new_status}'")
+            
+        except ValueError:
+            print("❌ Please enter a valid number.")
+        except Exception as e:
+            print(f"❌ Error updating appointment: {e}")
+    
+    def cancel_appointment(self):
+        """Cancel an appointment."""
+        try:
+            appointment_id = int(input("\nEnter Appointment ID to cancel: ").strip())
+            appointment = Appointment.find_by_id(self.session, appointment_id)
+            
+            if not appointment:
+                print(f"❌ No appointment found with ID {appointment_id}")
+                return
+            
+            # Show appointment details first
+            self.display_appointment_details(appointment)
+            
+            if appointment.status == 'cancelled':
+                print(f"\nℹ️  Appointment is already cancelled.")
+                return
+            
+            # Ask for confirmation
+            confirm = input(f"\n⚠️  Are you sure you want to cancel this appointment? (yes/no): ").strip().lower()
+            
+            if confirm == 'yes':
+                if Appointment.cancel(self.session, appointment_id):
+                    print(f"✅ Appointment {appointment_id} cancelled successfully!")
+                else:
+                    print(f"❌ Failed to cancel appointment.")
+            else:
+                print("❌ Cancellation cancelled.")
+                
+        except ValueError:
+            print("❌ Please enter a valid number.")
+    
+    def delete_appointment(self):
+        """Delete an appointment."""
+        try:
+            appointment_id = int(input("\nEnter Appointment ID to delete: ").strip())
+            appointment = Appointment.find_by_id(self.session, appointment_id)
+            
+            if not appointment:
+                print(f"❌ No appointment found with ID {appointment_id}")
+                return
+            
+            # Show appointment details first
+            self.display_appointment_details(appointment)
+            
+            # Ask for confirmation
+            confirm = input(f"\n⚠️  Are you sure you want to DELETE this appointment? This cannot be undone. (yes/no): ").strip().lower()
+            
+            if confirm == 'yes':
+                if Appointment.delete(self.session, appointment_id):
+                    print(f"✅ Appointment {appointment_id} deleted successfully!")
+                else:
+                    print(f"❌ Failed to delete appointment.")
+            else:
+                print("❌ Deletion cancelled.")
+                
+        except ValueError:
+            print("❌ Please enter a valid number.")
+
+             # ========== REPORT METHODS ==========
+    
+    def handle_reports(self):
+        """Handle reports and analytics."""
+        print("\n📊 REPORTS & ANALYTICS")
+        print("-" * 40)
+        print("1. Daily Revenue Report")
+        print("2. Client Count Report")
+        print("3. Stylist Performance Report")
+        print("4. Service Popularity Report")
+        print("5. Back to Main Menu")
+        print("-" * 40)
+        
+        choice = input("\nEnter your choice (1-5): ").strip()
+        
+        if choice == "1":
+            self.daily_revenue_report()
+        elif choice == "2":
+            self.client_count_report()
+        elif choice == "3":
+            self.stylist_performance_report()
+        elif choice == "4":
+            self.view_service_popularity()  # Already implemented
+        elif choice == "5":
+            return
+        else:
+            print("❌ Invalid choice.")
+    
+    def daily_revenue_report(self):
+        """Generate daily revenue report."""
+        date_str = input("\nEnter date for report (YYYY-MM-DD): ").strip()
+        if not date_str:
+            print("❌ Please enter a date.")
+            return
+        
+        try:
+            year, month, day = map(int, date_str.split('-'))
+            report_date = date(year, month, day)
+        except ValueError:
+            print("❌ Invalid date format. Use YYYY-MM-DD.")
+            return
+        
+        # Get appointments for the date
+        appointments = Appointment.find_by_date(self.session, report_date)
+        completed_appointments = [app for app in appointments if app.status == 'completed']
+        
+        print(f"\n💰 DAILY REVENUE REPORT - {date_str}")
+        print("=" * 60)
+        print(f"Total Appointments: {len(appointments)}")
+        print(f"Completed Appointments: {len(completed_appointments)}")
+        print(f"Cancelled/No-Show: {len(appointments) - len(completed_appointments)}")
+        
+        if completed_appointments:
+            total_revenue = sum(app.total_price for app in completed_appointments)
+            print(f"\nTotal Revenue: ${total_revenue:.2f}")
+            
+            print(f"\n📋 Breakdown by Service:")
+            print("-" * 50)
+            
+            # Group by service
+            service_revenue = {}
+            for app in completed_appointments:
+                if app.service:
+                    service_name = app.service.name
+                    service_revenue[service_name] = service_revenue.get(service_name, 0) + app.total_price
+            
+            for service_name, revenue in sorted(service_revenue.items(), key=lambda x: x[1], reverse=True):
+                print(f"  {service_name}: ${revenue:.2f}")
+        else:
+            print(f"\nTotal Revenue: $0.00")
+    
+    def client_count_report(self):
+        """Generate client count report."""
+        clients = Client.get_all(self.session)
+        
+        print(f"\n👥 CLIENT COUNT REPORT")
+        print("=" * 60)
+        print(f"Total Clients: {len(clients)}")
+        
+        # Count clients with appointments
+        clients_with_appointments = 0
+        total_appointments = 0
+        appointment_counts = []
+        
+        for client in clients:
+            appointments = client.get_appointments(self.session)
+            if appointments:
+                clients_with_appointments += 1
+                total_appointments += len(appointments)
+                appointment_counts.append(len(appointments))
+        
+        print(f"Clients with Appointments: {clients_with_appointments}")
+        print(f"Clients without Appointments: {len(clients) - clients_with_appointments}")
+        print(f"Total Appointments: {total_appointments}")
+        
+        if appointment_counts:
+            avg_appointments = total_appointments / clients_with_appointments
+            print(f"Average Appointments per Client: {avg_appointments:.1f}")
+            print(f"Most Appointments by a Client: {max(appointment_counts)}")
+            print(f"Least Appointments by a Client: {min(appointment_counts)}")
+    
+    def stylist_performance_report(self):
+        """Generate stylist performance report."""
+        stylists = Stylist.get_all(self.session)
+        
+        print(f"\n💇 STYLIST PERFORMANCE REPORT")
+        print("=" * 80)
+        print(f"{'Name':<20} {'Specialty':<15} {'Total Appts':<12} {'Completed':<12} {'Revenue':<12} {'Avg/Appt':<12}")
+        print("=" * 80)
+        
+        for stylist in stylists:
+            appointments = stylist.get_appointments(self.session)
+            completed = [app for app in appointments if app.status == 'completed']
+            revenue = sum(app.total_price for app in completed)
+            
+            avg_revenue = revenue / len(completed) if completed else 0
+            
+            print(f"{stylist.full_name:<20} {stylist.specialty or 'N/A':<15} {len(appointments):<12} {len(completed):<12} ${revenue:<11.2f} ${avg_revenue:<11.2f}")
+    
+    # ========== SEARCH METHODS ==========
+    
+    def handle_search(self):
+        """Handle search operations."""
+        while True:
+            self.search_menu()
+            choice = input("\nEnter your choice (1-4): ").strip()
+            
+            if choice == "4":
+                break
+            elif choice == "1":
+                self.search_clients()
+            elif choice == "2":
+                self.search_appointments_by_date_range()
+            elif choice == "3":
+                self.search_revenue_by_date()
+            else:
+                print("❌ Invalid choice. Please enter a number between 1-4.")
+    
+    def search_clients(self):
+        """Search clients by various criteria."""
+        print("\n🔍 SEARCH CLIENTS")
+        print("-" * 40)
+        print("1. By Name")
+        print("2. By Phone")
+        print("3. By Email")
+        print("4. Back to Search Menu")
+        print("-" * 40)
+        
+        choice = input("\nEnter your choice (1-4): ").strip()
+        
+        if choice == "1":
+            name = input("Enter name to search: ").strip()
+            clients = Client.find_by_name(self.session, name)
+            
+            if clients:
+                print(f"\n🔍 FOUND {len(clients)} CLIENT(S)")
+                print("-" * 70)
+                for client in clients:
+                    print(f"ID: {client.id} | Name: {client.full_name} | Phone: {client.formatted_phone} | Email: {client.email or 'N/A'}")
+            else:
+                print(f"❌ No clients found matching '{name}'")
+                
+        elif choice == "2":
+            phone = input("Enter phone to search: ").strip()
+            client = Client.find_by_phone(self.session, phone)
+            
+            if client:
+                self.display_client_details(client)
+            else:
+                print(f"❌ No client found with phone {phone}")
+                
+        elif choice == "3":
+            email = input("Enter email to search: ").strip()
+            clients = self.session.query(Client).filter(Client.email.ilike(f"%{email}%")).all()
+            
+            if clients:
+                print(f"\n🔍 FOUND {len(clients)} CLIENT(S)")
+                print("-" * 70)
+                for client in clients:
+                    print(f"ID: {client.id} | Name: {client.full_name} | Phone: {client.formatted_phone} | Email: {client.email}")
+            else:
+                print(f"❌ No clients found with email containing '{email}'")
+                
+        elif choice == "4":
+            return
+        else:
+            print("❌ Invalid choice.")
+    
+    def search_appointments_by_date_range(self):
+        """Search appointments within a date range."""
+        print("\n🔍 SEARCH APPOINTMENTS BY DATE RANGE")
+        print("-" * 40)
+        
+        try:
+            start_str = input("Start Date (YYYY-MM-DD): ").strip()
+            end_str = input("End Date (YYYY-MM-DD): ").strip()
+            
+            if not start_str or not end_str:
+                print("❌ Both start and end dates are required.")
+                return
+            
+            # Parse dates
+            start_year, start_month, start_day = map(int, start_str.split('-'))
+            end_year, end_month, end_day = map(int, end_str.split('-'))
+            
+            start_date = date(start_year, start_month, start_day)
+            end_date = date(end_year, end_month, end_day)
+            
+            if start_date > end_date:
+                print("❌ Start date must be before end date.")
+                return
+            
+            # Query appointments in date range
+            start_datetime = datetime.combine(start_date, time.min)
+            end_datetime = datetime.combine(end_date, time.max)
+            
+            appointments = self.session.query(Appointment).filter(
+                Appointment.appointment_date >= start_datetime,
+                Appointment.appointment_date <= end_datetime
+            ).all()
+            
+            if not appointments:
+                print(f"\n📭 No appointments found between {start_str} and {end_str}")
+                return
+            
+            print(f"\n📅 APPOINTMENTS BETWEEN {start_str} AND {end_str} ({len(appointments)} total)")
+            print("-" * 100)
+            print(f"{'Date':<12} {'Time':<10} {'Client':<20} {'Stylist':<20} {'Service':<20} {'Status':<12} {'Price':<10}")
+            print("-" * 100)
+            
+            for app in sorted(appointments, key=lambda x: x.appointment_date):
+                client_name = app.client.full_name if app.client else "N/A"
+                stylist_name = app.stylist.full_name if app.stylist else "N/A"
+                service_name = app.service.name if app.service else "N/A"
+                print(f"{app.date_only:<12} {app.time_only:<10} {client_name:<20} {stylist_name:<20} {service_name:<20} {app.status:<12} ${app.total_price:<9.2f}")
+                
+        except ValueError:
+            print("❌ Invalid date format. Use YYYY-MM-DD.")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+    
+    def search_revenue_by_date(self):
+        """Search revenue by date."""
+        print("\n💰 SEARCH REVENUE BY DATE")
+        print("-" * 40)
+        
+        try:
+            start_str = input("Start Date (YYYY-MM-DD): ").strip()
+            end_str = input("End Date (YYYY-MM-DD): ").strip()
+            
+            if not start_str or not end_str:
+                print("❌ Both start and end dates are required.")
+                return
+            
+            # Parse dates
+            start_year, start_month, start_day = map(int, start_str.split('-'))
+            end_year, end_month, end_day = map(int, end_str.split('-'))
+            
+            start_date = date(start_year, start_month, start_day)
+            end_date = date(end_year, end_month, end_day)
+            
+            if start_date > end_date:
+                print("❌ Start date must be before end date.")
+                return
+            
+            # Calculate total revenue for the period
+            total_revenue = 0
+            current_date = start_date
+            daily_revenues = []
+            
+            while current_date <= end_date:
+                daily_rev = Appointment.get_daily_revenue(self.session, current_date)
+                total_revenue += daily_rev
+                if daily_rev > 0:
+                    daily_revenues.append((current_date, daily_rev))
+                current_date += timedelta(days=1)
+            
+            print(f"\n💰 REVENUE REPORT: {start_str} TO {end_str}")
+            print("=" * 60)
+            print(f"Total Revenue: ${total_revenue:.2f}")
+            print(f"Days with Revenue: {len(daily_revenues)}")
+            print(f"Days in Period: {(end_date - start_date).days + 1}")
+            
+            if daily_revenues:
+                print(f"\n📅 Daily Breakdown:")
+                print("-" * 30)
+                for day, rev in sorted(daily_revenues, key=lambda x: x[1], reverse=True):
+                    print(f"  {day.strftime('%Y-%m-%d')}: ${rev:.2f}")
+                    
+        except ValueError:
+            print("❌ Invalid date format. Use YYYY-MM-DD.")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+                        
 def main():
     """Main function to run the CLI."""
     cli = SalonProCLI()
