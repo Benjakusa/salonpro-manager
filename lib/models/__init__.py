@@ -1,20 +1,19 @@
 """
 Models package initialization.
-Import all models here to make them available.
+This makes all models easily importable.
 """
 
 # Import database configuration
-from database import Base, Session, engine
+from database import Base, Session, engine, init_db, get_session, reset_db
 
-# Import all model classes here (we'll create them next)
-# from .client import Client
-# from .stylist import Stylist
+# Import models
+from .client import Client
+from .stylist import Stylist
 # from .service import Service
 # from .appointment import Appointment
 
-def get_session():
-    """Get a new database session."""
-    return Session()
-
-# For now, just export the Base and Session
-__all__ = ['Base', 'Session', 'engine', 'get_session']
+# Make models available
+__all__ = [
+    'Base', 'Session', 'engine', 'init_db', 'get_session', 'reset_db',
+    'Client', 'Stylist'
+]

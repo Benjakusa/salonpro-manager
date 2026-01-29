@@ -17,5 +17,13 @@ Session = sessionmaker(bind=engine)
 
 def init_db():
     """Initialize the database by creating all tables."""
+    # Import models here to ensure they're registered with Base
+    from models.client import Client
+    from models.stylist import Stylist
+    # We'll add Service and Appointment later
+    
+    # Create all tables
     Base.metadata.create_all(engine)
+    
+    print("Database tables created successfully!")
     return Session()
