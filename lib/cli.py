@@ -6,7 +6,7 @@ Main entry point for the salon management system.
 
 from database import init_db, get_session
 from models import Client, Stylist, Service, Appointment
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time
 import sys
 
 
@@ -22,7 +22,7 @@ class SalonProCLI:
 
     def display_main_menu(self):
         """Display the main menu options."""
-        print("\n📋 MAIN MENU")
+        print("\nMAIN MENU")
         print("-" * 40)
         print("1.  Client Management")
         print("2.  Stylist Management")
@@ -35,7 +35,7 @@ class SalonProCLI:
 
     def client_management_menu(self):
         """Display client management menu."""
-        print("\n👥 CLIENT MANAGEMENT")
+        print("\nCLIENT MANAGEMENT")
         print("-" * 40)
         print("1.  View All Clients")
         print("2.  Add New Client")
@@ -50,7 +50,7 @@ class SalonProCLI:
 
     def stylist_management_menu(self):
         """Display stylist management menu."""
-        print("\n💇 STYLIST MANAGEMENT")
+        print("\nSTYLIST MANAGEMENT")
         print("-" * 40)
         print("1.  View All Stylists")
         print("2.  Add New Stylist")
@@ -65,7 +65,7 @@ class SalonProCLI:
 
     def service_management_menu(self):
         """Display service management menu."""
-        print("\n✂️ SERVICE MANAGEMENT")
+        print("\nSERVICE MANAGEMENT")
         print("-" * 40)
         print("1.  View All Services")
         print("2.  View Service Menu (Active Only)")
@@ -80,7 +80,7 @@ class SalonProCLI:
 
     def appointment_management_menu(self):
         """Display appointment management menu."""
-        print("\n📅 APPOINTMENT MANAGEMENT")
+        print("\nAPPOINTMENT MANAGEMENT")
         print("-" * 40)
         print("1.  View All Appointments")
         print("2.  View Today's Appointments")
@@ -98,7 +98,7 @@ class SalonProCLI:
 
     def search_menu(self):
         """Display search menu."""
-        print("\n🔍 SEARCH & FIND")
+        print("\nSEARCH & FIND")
         print("-" * 40)
         print("1.  Search Clients")
         print("2.  Search Appointments by Date Range")
@@ -127,7 +127,7 @@ class SalonProCLI:
             elif choice == "6":
                 self.handle_search()
             else:
-                print("❌ Invalid choice. Please enter a number between 0-6.")
+                print("Invalid choice. Please enter a number between 0-6.")
 
     # ========== CLIENT MANAGEMENT METHODS ==========
 
@@ -156,16 +156,16 @@ class SalonProCLI:
             elif choice == "8":
                 self.delete_client()
             else:
-                print("❌ Invalid choice. Please enter a number between 1-9.")
+                print("Invalid choice. Please enter a number between 1-9.")
 
     def view_all_clients(self):
         """Display all clients."""
         clients = Client.get_all(self.session)
         if not clients:
-            print("\n📭 No clients found.")
+            print("\nNo clients found.")
             return
 
-        print(f"\n👥 ALL CLIENTS ({len(clients)} total)")
+        print(f"\nALL CLIENTS ({len(clients)} total)")
         print("-" * 70)
         print(f"{'ID':<5} {'Name':<25} {'Phone':<15} {'Email':<25}")
         print("-" * 70)
@@ -175,7 +175,7 @@ class SalonProCLI:
 
     def add_new_client(self):
         """Add a new client to the database."""
-        print("\n➕ ADD NEW CLIENT")
+        print("\nADD NEW CLIENT")
         print("-" * 40)
 
         try:
@@ -186,13 +186,13 @@ class SalonProCLI:
             notes = input("Notes (optional): ").strip() or None
 
             if not first_name or not last_name or not phone:
-                print("❌ First name, last name, and phone are required.")
+                print("First name, last name, and phone are required.")
                 return
 
             # Check if phone already exists
             existing = Client.find_by_phone(self.session, phone)
             if existing:
-                print(f"❌ Phone number already registered to {existing.full_name}")
+                print(f"Phone number already registered to {existing.full_name}")
                 return
 
             client = Client.create(
@@ -204,12 +204,12 @@ class SalonProCLI:
                 notes=notes
             )
 
-            print(f"\n✅ Client added successfully!")
+            print(f"\nClient added successfully!")
             print(f"   Name: {client.full_name}")
             print(f"   ID: {client.id}")
 
         except Exception as e:
-            print(f"❌ Error adding client: {e}")
+            print(f"Error adding client: {e}")
 
     def find_client_by_id(self):
         """Find a client by their ID."""
@@ -220,24 +220,24 @@ class SalonProCLI:
             if client:
                 self.display_client_details(client)
             else:
-                print(f"❌ No client found with ID {client_id}")
+                print(f"No client found with ID {client_id}")
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
 
     def find_client_by_name(self):
         """Find clients by name (partial match)."""
         name = input("\nEnter client name (or part): ").strip()
         if not name:
-            print("❌ Please enter a name to search.")
+            print("Please enter a name to search.")
             return
 
         clients = Client.find_by_name(self.session, name)
 
         if not clients:
-            print(f"❌ No clients found matching '{name}'")
+            print(f"No clients found matching '{name}'")
             return
 
-        print(f"\n🔍 FOUND {len(clients)} CLIENT(S)")
+        print(f"\nFOUND {len(clients)} CLIENT(S)")
         print("-" * 70)
         for client in clients:
             print(f"ID: {client.id} | Name: {client.full_name} | Phone: {client.formatted_phone}")
@@ -246,7 +246,7 @@ class SalonProCLI:
         """Find a client by phone number."""
         phone = input("\nEnter phone number: ").strip()
         if not phone:
-            print("❌ Please enter a phone number.")
+            print("Please enter a phone number.")
             return
 
         client = Client.find_by_phone(self.session, phone)
@@ -254,11 +254,11 @@ class SalonProCLI:
         if client:
             self.display_client_details(client)
         else:
-            print(f"❌ No client found with phone {phone}")
+            print(f"No client found with phone {phone}")
 
     def display_client_details(self, client):
         """Display detailed information about a client."""
-        print(f"\n📄 CLIENT DETAILS")
+        print(f"\nCLIENT DETAILS")
         print("-" * 40)
         print(f"ID: {client.id}")
         print(f"Name: {client.full_name}")
@@ -279,11 +279,11 @@ class SalonProCLI:
             client = Client.find_by_id(self.session, client_id)
 
             if not client:
-                print(f"❌ No client found with ID {client_id}")
+                print(f"No client found with ID {client_id}")
                 return
 
             self.display_client_details(client)
-            print("\n📝 UPDATE CLIENT (leave blank to keep current value)")
+            print("\nUPDATE CLIENT (leave blank to keep current value)")
             print("-" * 40)
 
             updates = {}
@@ -301,7 +301,7 @@ class SalonProCLI:
                 # Check if new phone already exists
                 existing = Client.find_by_phone(self.session, new_phone)
                 if existing and existing.id != client_id:
-                    print(f"❌ Phone number already registered to {existing.full_name}")
+                    print(f"Phone number already registered to {existing.full_name}")
                     return
                 updates['phone'] = new_phone
 
@@ -315,14 +315,14 @@ class SalonProCLI:
 
             if updates:
                 Client.update(self.session, client_id, **updates)
-                print(f"\n✅ Client {client_id} updated successfully!")
+                print(f"\nClient {client_id} updated successfully!")
             else:
-                print("\nℹ️  No changes made.")
+                print("\nNo changes made.")
 
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
         except Exception as e:
-            print(f"❌ Error updating client: {e}")
+            print(f"Error updating client: {e}")
 
     def view_client_appointments(self):
         """View all appointments for a specific client."""
@@ -331,16 +331,16 @@ class SalonProCLI:
             client = Client.find_by_id(self.session, client_id)
 
             if not client:
-                print(f"❌ No client found with ID {client_id}")
+                print(f"No client found with ID {client_id}")
                 return
 
             appointments = client.get_appointments(self.session)
 
             if not appointments:
-                print(f"\n📭 No appointments found for {client.full_name}")
+                print(f"\nNo appointments found for {client.full_name}")
                 return
 
-            print(f"\n📅 APPOINTMENTS FOR {client.full_name.upper()} ({len(appointments)} total)")
+            print(f"\nAPPOINTMENTS FOR {client.full_name.upper()} ({len(appointments)} total)")
             print("-" * 90)
             print(f"{'Date':<20} {'Time':<10} {'Stylist':<20} {'Service':<25} {'Status':<12} {'Price':<10}")
             print("-" * 90)
@@ -351,7 +351,7 @@ class SalonProCLI:
                 print(f"{app.date_only:<20} {app.time_only:<10} {stylist_name:<20} {service_name:<25} {app.status:<12} ${app.total_price:<9.2f}")
 
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
 
     def delete_client(self):
         """Delete a client from the database."""
@@ -360,32 +360,32 @@ class SalonProCLI:
             client = Client.find_by_id(self.session, client_id)
 
             if not client:
-                print(f"❌ No client found with ID {client_id}")
+                print(f"No client found with ID {client_id}")
                 return
 
             # Show client details first
             self.display_client_details(client)
 
             # Ask for confirmation
-            confirm = input(f"\n⚠️  Are you sure you want to delete {client.full_name}? (yes/no): ").strip().lower()
+            confirm = input(f"\nAre you sure you want to delete {client.full_name}? (yes/no): ").strip().lower()
 
             if confirm == 'yes':
                 # Check if client has appointments
                 appointments = client.get_appointments(self.session)
                 if appointments:
-                    print(f"❌ Cannot delete client with {len(appointments)} existing appointment(s).")
+                    print(f"Cannot delete client with {len(appointments)} existing appointment(s).")
                     print("   Please cancel or reassign appointments first.")
                     return
 
                 if Client.delete(self.session, client_id):
-                    print(f"✅ Client {client.full_name} deleted successfully!")
+                    print(f"Client {client.full_name} deleted successfully!")
                 else:
-                    print(f"❌ Failed to delete client.")
+                    print(f"Failed to delete client.")
             else:
-                print("❌ Deletion cancelled.")
+                print("Deletion cancelled.")
 
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
 
     
 
@@ -393,7 +393,7 @@ class SalonProCLI:
         """Exit the program gracefully."""
         print("\n" + "="*60)
         print("Thank you for using SalonPro Manager!")
-        print("Goodbye! 👋")
+        print("Goodbye!")
         print("="*60)
         self.session.close()
         sys.exit(0)
@@ -425,16 +425,16 @@ class SalonProCLI:
             elif choice == "8":
                 self.deactivate_stylist()
             else:
-                print("❌ Invalid choice. Please enter a number between 1-9.")
+                print("Invalid choice. Please enter a number between 1-9.")
     
     def view_all_stylists(self):
         """Display all stylists."""
         stylists = Stylist.get_all(self.session)
         if not stylists:
-            print("\n📭 No stylists found.")
+            print("\nNo stylists found.")
             return
         
-        print(f"\n💇 ALL STYLISTS ({len(stylists)} total)")
+        print(f"\nALL STYLISTS ({len(stylists)} total)")
         print("-" * 80)
         print(f"{'ID':<5} {'Name':<25} {'Specialty':<20} {'Hourly Rate':<12} {'Status':<10}")
         print("-" * 80)
@@ -445,7 +445,7 @@ class SalonProCLI:
     
     def add_new_stylist(self):
         """Add a new stylist to the database."""
-        print("\n➕ ADD NEW STYLIST")
+        print("\nADD NEW STYLIST")
         print("-" * 40)
         
         try:
@@ -457,20 +457,20 @@ class SalonProCLI:
             hourly_rate = input("Hourly Rate (default 25.00): ").strip()
             
             if not first_name or not last_name or not phone or not email:
-                print("❌ First name, last name, phone, and email are required.")
+                print("First name, last name, phone, and email are required.")
                 return
             
             # Convert hourly rate
             try:
                 hourly_rate = float(hourly_rate) if hourly_rate else 25.0
             except ValueError:
-                print("❌ Hourly rate must be a number.")
+                print("Hourly rate must be a number.")
                 return
             
             # Check if phone already exists
             existing = self.session.query(Stylist).filter_by(phone=phone).first()
             if existing:
-                print(f"❌ Phone number already registered to {existing.full_name}")
+                print(f"Phone number already registered to {existing.full_name}")
                 return
             
             stylist = Stylist.create(
@@ -483,13 +483,13 @@ class SalonProCLI:
                 hourly_rate=hourly_rate
             )
             
-            print(f"\n✅ Stylist added successfully!")
+            print(f"\nStylist added successfully!")
             print(f"   Name: {stylist.full_name}")
             print(f"   ID: {stylist.id}")
             print(f"   Specialty: {stylist.specialty}")
             
         except Exception as e:
-            print(f"❌ Error adding stylist: {e}")
+            print(f"Error adding stylist: {e}")
     
     def find_stylist_by_id(self):
         """Find a stylist by their ID."""
@@ -500,24 +500,24 @@ class SalonProCLI:
             if stylist:
                 self.display_stylist_details(stylist)
             else:
-                print(f"❌ No stylist found with ID {stylist_id}")
+                print(f"No stylist found with ID {stylist_id}")
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
     
     def find_stylist_by_specialty(self):
         """Find stylists by specialty."""
         specialty = input("\nEnter specialty to search: ").strip()
         if not specialty:
-            print("❌ Please enter a specialty to search.")
+            print("Please enter a specialty to search.")
             return
         
         stylists = Stylist.find_by_specialty(self.session, specialty)
         
         if not stylists:
-            print(f"❌ No stylists found with specialty '{specialty}'")
+            print(f"No stylists found with specialty '{specialty}'")
             return
         
-        print(f"\n🔍 FOUND {len(stylists)} STYLIST(S) WITH SPECIALTY '{specialty.upper()}'")
+        print(f"\nFOUND {len(stylists)} STYLIST(S) WITH SPECIALTY '{specialty.upper()}'")
         print("-" * 70)
         for stylist in stylists:
             status = "Active" if stylist.is_active else "Inactive"
@@ -525,7 +525,7 @@ class SalonProCLI:
     
     def display_stylist_details(self, stylist):
         """Display detailed information about a stylist."""
-        print(f"\n📄 STYLIST DETAILS")
+        print(f"\nSTYLIST DETAILS")
         print("-" * 40)
         print(f"ID: {stylist.id}")
         print(f"Name: {stylist.full_name}")
@@ -553,7 +553,7 @@ class SalonProCLI:
             stylist = Stylist.find_by_id(self.session, stylist_id)
             
             if not stylist:
-                print(f"❌ No stylist found with ID {stylist_id}")
+                print(f"No stylist found with ID {stylist_id}")
                 return
             
             # Get upcoming appointments
@@ -561,10 +561,10 @@ class SalonProCLI:
             upcoming = [app for app in appointments if app.is_upcoming]
             
             if not upcoming:
-                print(f"\n📭 No upcoming appointments for {stylist.full_name}")
+                print(f"\nNo upcoming appointments for {stylist.full_name}")
                 return
             
-            print(f"\n📅 UPCOMING SCHEDULE FOR {stylist.full_name.upper()} ({len(upcoming)} appointments)")
+            print(f"\nUPCOMING SCHEDULE FOR {stylist.full_name.upper()} ({len(upcoming)} appointments)")
             print("-" * 90)
             print(f"{'Date':<12} {'Time':<10} {'Client':<20} {'Service':<25} {'Duration':<10} {'Price':<10}")
             print("-" * 90)
@@ -575,7 +575,7 @@ class SalonProCLI:
                 print(f"{app.date_only:<12} {app.time_only:<10} {client_name:<20} {service_name:<25} {app.duration_minutes} min{'':<5} ${app.total_price:<9.2f}")
                 
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
     
     def update_stylist(self):
         """Update stylist information."""
@@ -584,11 +584,11 @@ class SalonProCLI:
             stylist = Stylist.find_by_id(self.session, stylist_id)
             
             if not stylist:
-                print(f"❌ No stylist found with ID {stylist_id}")
+                print(f"No stylist found with ID {stylist_id}")
                 return
             
             self.display_stylist_details(stylist)
-            print("\n📝 UPDATE STYLIST (leave blank to keep current value)")
+            print("\nUPDATE STYLIST (leave blank to keep current value)")
             print("-" * 40)
             
             updates = {}
@@ -606,7 +606,7 @@ class SalonProCLI:
                 # Check if new phone already exists
                 existing = self.session.query(Stylist).filter_by(phone=new_phone).first()
                 if existing and existing.id != stylist_id:
-                    print(f"❌ Phone number already registered to {existing.full_name}")
+                    print(f"Phone number already registered to {existing.full_name}")
                     return
                 updates['phone'] = new_phone
             
@@ -623,19 +623,19 @@ class SalonProCLI:
                 try:
                     updates['hourly_rate'] = float(new_rate.replace('$', ''))
                 except ValueError:
-                    print("❌ Hourly rate must be a number.")
+                    print("Hourly rate must be a number.")
                     return
             
             if updates:
                 Stylist.update(self.session, stylist_id, **updates)
-                print(f"\n✅ Stylist {stylist_id} updated successfully!")
+                print(f"\nStylist {stylist_id} updated successfully!")
             else:
-                print("\nℹ️  No changes made.")
+                print("\nNo changes made.")
                 
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
         except Exception as e:
-            print(f"❌ Error updating stylist: {e}")
+            print(f"Error updating stylist: {e}")
     
     def view_stylist_clients(self):
         """View all clients of a specific stylist."""
@@ -644,14 +644,14 @@ class SalonProCLI:
             stylist = Stylist.find_by_id(self.session, stylist_id)
             
             if not stylist:
-                print(f"❌ No stylist found with ID {stylist_id}")
+                print(f"No stylist found with ID {stylist_id}")
                 return
             
             # Get all appointments for this stylist
             appointments = Appointment.find_by_stylist(self.session, stylist_id)
             
             if not appointments:
-                print(f"\n📭 No appointments found for {stylist.full_name}")
+                print(f"\nNo appointments found for {stylist.full_name}")
                 return
             
             # Get unique clients
@@ -660,7 +660,7 @@ class SalonProCLI:
                 if app.client:
                     client_ids.add(app.client.id)
             
-            print(f"\n👥 CLIENTS OF {stylist.full_name.upper()} ({len(client_ids)} unique clients)")
+            print(f"\nCLIENTS OF {stylist.full_name.upper()} ({len(client_ids)} unique clients)")
             print("-" * 70)
             
             for client_id in client_ids:
@@ -671,7 +671,7 @@ class SalonProCLI:
                     print(f"• {client.full_name} ({len(client_appointments)} appointments)")
                     
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
     
     def deactivate_stylist(self):
         """Deactivate a stylist."""
@@ -680,14 +680,14 @@ class SalonProCLI:
             stylist = Stylist.find_by_id(self.session, stylist_id)
             
             if not stylist:
-                print(f"❌ No stylist found with ID {stylist_id}")
+                print(f"No stylist found with ID {stylist_id}")
                 return
             
             # Show stylist details first
             self.display_stylist_details(stylist)
             
             # Ask for confirmation
-            confirm = input(f"\n⚠️  Are you sure you want to deactivate {stylist.full_name}? (yes/no): ").strip().lower()
+            confirm = input(f"\nAre you sure you want to deactivate {stylist.full_name}? (yes/no): ").strip().lower()
             
             if confirm == 'yes':
                 # Check if stylist has upcoming appointments
@@ -695,18 +695,18 @@ class SalonProCLI:
                 upcoming = [app for app in appointments if app.is_upcoming]
                 
                 if upcoming:
-                    print(f"❌ Cannot deactivate stylist with {len(upcoming)} upcoming appointment(s).")
+                    print(f"Cannot deactivate stylist with {len(upcoming)} upcoming appointment(s).")
                     print("   Please cancel or reassign appointments first.")
                     return
                 
                 stylist.is_active = 0
                 self.session.commit()
-                print(f"✅ Stylist {stylist.full_name} deactivated successfully!")
+                print(f"Stylist {stylist.full_name} deactivated successfully!")
             else:
-                print("❌ Deactivation cancelled.")
+                print("Deactivation cancelled.")
                 
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
     # ========== SERVICE MANAGEMENT METHODS ==========
     
     def handle_service_management(self):
@@ -734,16 +734,16 @@ class SalonProCLI:
             elif choice == "8":
                 self.deactivate_service()
             else:
-                print("❌ Invalid choice. Please enter a number between 1-9.")
+                print("Invalid choice. Please enter a number between 1-9.")
     
     def view_all_services(self):
         """Display all services."""
         services = Service.get_all(self.session)
         if not services:
-            print("\n📭 No services found.")
+            print("\nNo services found.")
             return
         
-        print(f"\n✂️ ALL SERVICES ({len(services)} total)")
+        print(f"\nALL SERVICES ({len(services)} total)")
         print("-" * 90)
         print(f"{'ID':<5} {'Name':<25} {'Category':<15} {'Duration':<12} {'Price':<10} {'Status':<10}")
         print("-" * 90)
@@ -756,10 +756,10 @@ class SalonProCLI:
         """Display active services only (menu for clients)."""
         services = Service.get_active(self.session)
         if not services:
-            print("\n📭 No active services found.")
+            print("\nNo active services found.")
             return
         
-        print(f"\n📋 SERVICE MENU ({len(services)} active services)")
+        print(f"\nSERVICE MENU ({len(services)} active services)")
         print("-" * 80)
         print(f"{'ID':<5} {'Name':<25} {'Category':<15} {'Duration':<12} {'Price':<10}")
         print("-" * 80)
@@ -769,7 +769,7 @@ class SalonProCLI:
     
     def add_new_service(self):
         """Add a new service to the database."""
-        print("\n➕ ADD NEW SERVICE")
+        print("\nADD NEW SERVICE")
         print("-" * 40)
         
         try:
@@ -780,7 +780,7 @@ class SalonProCLI:
             description = input("Description (optional): ").strip() or None
             
             if not name or not category or not duration or not price:
-                print("❌ Service name, category, duration, and price are required.")
+                print("Service name, category, duration, and price are required.")
                 return
             
             # Convert to proper types
@@ -788,13 +788,13 @@ class SalonProCLI:
                 duration = int(duration)
                 price = float(price)
             except ValueError:
-                print("❌ Duration must be a whole number and price must be a number.")
+                print("Duration must be a whole number and price must be a number.")
                 return
             
             # Check if service name already exists
             existing = self.session.query(Service).filter_by(name=name).first()
             if existing:
-                print(f"❌ Service '{name}' already exists (ID: {existing.id})")
+                print(f"Service '{name}' already exists (ID: {existing.id})")
                 return
             
             service = Service.create(
@@ -806,14 +806,14 @@ class SalonProCLI:
                 category=category
             )
             
-            print(f"\n✅ Service added successfully!")
+            print(f"\nService added successfully!")
             print(f"   Name: {service.name}")
             print(f"   ID: {service.id}")
             print(f"   Price: {service.formatted_price}")
             print(f"   Duration: {service.formatted_duration}")
             
         except Exception as e:
-            print(f"❌ Error adding service: {e}")
+            print(f"Error adding service: {e}")
     
     def find_service_by_id(self):
         """Find a service by its ID."""
@@ -824,24 +824,24 @@ class SalonProCLI:
             if service:
                 self.display_service_details(service)
             else:
-                print(f"❌ No service found with ID {service_id}")
+                print(f"No service found with ID {service_id}")
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
     
     def find_service_by_category(self):
         """Find services by category."""
         category = input("\nEnter category to search: ").strip()
         if not category:
-            print("❌ Please enter a category to search.")
+            print("Please enter a category to search.")
             return
         
         services = Service.find_by_category(self.session, category)
         
         if not services:
-            print(f"❌ No services found in category '{category}'")
+            print(f"No services found in category '{category}'")
             return
         
-        print(f"\n🔍 FOUND {len(services)} SERVICE(S) IN CATEGORY '{category.upper()}'")
+        print(f"\nFOUND {len(services)} SERVICE(S) IN CATEGORY '{category.upper()}'")
         print("-" * 70)
         for service in services:
             status = "Active" if service.is_active else "Inactive"
@@ -849,7 +849,7 @@ class SalonProCLI:
     
     def display_service_details(self, service):
         """Display detailed information about a service."""
-        print(f"\n📄 SERVICE DETAILS")
+        print(f"\nSERVICE DETAILS")
         print("-" * 40)
         print(f"ID: {service.id}")
         print(f"Name: {service.name}")
@@ -872,11 +872,11 @@ class SalonProCLI:
             service = Service.find_by_id(self.session, service_id)
             
             if not service:
-                print(f"❌ No service found with ID {service_id}")
+                print(f"No service found with ID {service_id}")
                 return
             
             self.display_service_details(service)
-            print("\n📝 UPDATE SERVICE (leave blank to keep current value)")
+            print("\nUPDATE SERVICE (leave blank to keep current value)")
             print("-" * 40)
             
             updates = {}
@@ -886,7 +886,7 @@ class SalonProCLI:
                 # Check if new name already exists
                 existing = self.session.query(Service).filter_by(name=new_name).first()
                 if existing and existing.id != service_id:
-                    print(f"❌ Service '{new_name}' already exists (ID: {existing.id})")
+                    print(f"Service '{new_name}' already exists (ID: {existing.id})")
                     return
                 updates['name'] = new_name
             
@@ -899,7 +899,7 @@ class SalonProCLI:
                 try:
                     updates['duration_minutes'] = int(new_duration)
                 except ValueError:
-                    print("❌ Duration must be a whole number.")
+                    print("Duration must be a whole number.")
                     return
             
             new_price = input(f"Price [${service.price:.2f}]: ").strip()
@@ -907,7 +907,7 @@ class SalonProCLI:
                 try:
                     updates['price'] = float(new_price.replace('$', ''))
                 except ValueError:
-                    print("❌ Price must be a number.")
+                    print("Price must be a number.")
                     return
             
             new_desc = input(f"Description [{service.description or 'None'}]: ").strip()
@@ -916,21 +916,21 @@ class SalonProCLI:
             
             if updates:
                 Service.update(self.session, service_id, **updates)
-                print(f"\n✅ Service {service_id} updated successfully!")
+                print(f"\nService {service_id} updated successfully!")
             else:
-                print("\nℹ️  No changes made.")
+                print("\nNo changes made.")
                 
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
         except Exception as e:
-            print(f"❌ Error updating service: {e}")
+            print(f"Error updating service: {e}")
     
     def view_service_popularity(self):
         """View service popularity based on bookings."""
         services = Service.get_all(self.session)
         
         if not services:
-            print("\n📭 No services found.")
+            print("\nNo services found.")
             return
         
         # Get appointment counts for each service
@@ -948,7 +948,7 @@ class SalonProCLI:
         # Sort by total bookings
         service_stats.sort(key=lambda x: x['total_bookings'], reverse=True)
         
-        print(f"\n📊 SERVICE POPULARITY REPORT")
+        print(f"\nSERVICE POPULARITY REPORT")
         print("-" * 100)
         print(f"{'Rank':<6} {'Service':<25} {'Category':<15} {'Total Bookings':<15} {'Completed':<12} {'Revenue':<12}")
         print("-" * 100)
@@ -964,14 +964,14 @@ class SalonProCLI:
             service = Service.find_by_id(self.session, service_id)
             
             if not service:
-                print(f"❌ No service found with ID {service_id}")
+                print(f"No service found with ID {service_id}")
                 return
             
             # Show service details first
             self.display_service_details(service)
             
             # Ask for confirmation
-            confirm = input(f"\n⚠️  Are you sure you want to deactivate '{service.name}'? (yes/no): ").strip().lower()
+            confirm = input(f"\nAre you sure you want to deactivate '{service.name}'? (yes/no): ").strip().lower()
             
             if confirm == 'yes':
                 # Check if service has upcoming appointments
@@ -979,19 +979,19 @@ class SalonProCLI:
                 upcoming = [app for app in appointments if app.is_upcoming]
                 
                 if upcoming:
-                    print(f"❌ Cannot deactivate service with {len(upcoming)} upcoming appointment(s).")
+                    print(f"Cannot deactivate service with {len(upcoming)} upcoming appointment(s).")
                     print("   Please cancel or reassign appointments first.")
                     return
                 
                 if Service.delete(self.session, service_id):
-                    print(f"✅ Service '{service.name}' deactivated successfully!")
+                    print(f"Service '{service.name}' deactivated successfully!")
                 else:
-                    print(f"❌ Failed to deactivate service.")
+                    print(f"Failed to deactivate service.")
             else:
-                print("❌ Deactivation cancelled.")
+                print("Deactivation cancelled.")
                 
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
 
     # ========== APPOINTMENT MANAGEMENT METHODS ==========
     
@@ -1026,16 +1026,16 @@ class SalonProCLI:
             elif choice == "11":
                 self.delete_appointment()
             else:
-                print("❌ Invalid choice. Please enter a number between 1-12.")
+                print("Invalid choice. Please enter a number between 1-12.")
     
     def view_all_appointments(self):
         """Display all appointments."""
         appointments = Appointment.get_all(self.session)
         if not appointments:
-            print("\n📭 No appointments found.")
+            print("\nNo appointments found.")
             return
         
-        print(f"\n📅 ALL APPOINTMENTS ({len(appointments)} total)")
+        print(f"\nALL APPOINTMENTS ({len(appointments)} total)")
         print("-" * 120)
         print(f"{'ID':<5} {'Date':<12} {'Time':<10} {'Client':<20} {'Stylist':<20} {'Service':<20} {'Status':<12} {'Price':<10}")
         print("-" * 120)
@@ -1052,17 +1052,17 @@ class SalonProCLI:
         appointments = Appointment.find_by_date(self.session, today)
         
         if not appointments:
-            print("\n📭 No appointments scheduled for today.")
+            print("\nNo appointments scheduled for today.")
             return
         
         # Filter for scheduled appointments only
         todays_apps = [app for app in appointments if app.status == 'scheduled']
         
         if not todays_apps:
-            print(f"\n📭 No scheduled appointments for today ({len(appointments) - len(todays_apps)} cancelled/completed)")
+            print(f"\nNo scheduled appointments for today ({len(appointments) - len(todays_apps)} cancelled/completed)")
             return
         
-        print(f"\n📅 TODAY'S APPOINTMENTS ({len(todays_apps)} scheduled)")
+        print(f"\nTODAY'S APPOINTMENTS ({len(todays_apps)} scheduled)")
         print("-" * 100)
         print(f"{'Time':<10} {'Client':<20} {'Stylist':<20} {'Service':<25} {'Duration':<10} {'Price':<10}")
         print("-" * 100)
@@ -1078,10 +1078,10 @@ class SalonProCLI:
         appointments = Appointment.find_upcoming(self.session)
         
         if not appointments:
-            print("\n📭 No upcoming appointments.")
+            print("\nNo upcoming appointments.")
             return
         
-        print(f"\n📅 UPCOMING APPOINTMENTS ({len(appointments)} total)")
+        print(f"\nUPCOMING APPOINTMENTS ({len(appointments)} total)")
         print("-" * 110)
         print(f"{'Date':<12} {'Time':<10} {'Client':<20} {'Stylist':<20} {'Service':<25} {'Duration':<10} {'Price':<10}")
         print("-" * 110)
@@ -1094,56 +1094,56 @@ class SalonProCLI:
     
     def schedule_new_appointment(self):
         """Schedule a new appointment."""
-        print("\n➕ SCHEDULE NEW APPOINTMENT")
+        print("\nSCHEDULE NEW APPOINTMENT")
         print("-" * 40)
         
         try:
             # Show available clients
             clients = Client.get_all(self.session)
             if not clients:
-                print("❌ No clients available. Please add a client first.")
+                print("No clients available. Please add a client first.")
                 return
             
-            print("\n👥 Available Clients:")
+            print("\nAvailable Clients:")
             for client in clients[:10]:  # Show first 10
                 print(f"  {client.id}. {client.full_name}")
             
             client_id = int(input("\nSelect Client ID: ").strip())
             client = Client.find_by_id(self.session, client_id)
             if not client:
-                print(f"❌ No client found with ID {client_id}")
+                print(f"No client found with ID {client_id}")
                 return
             
             # Show available stylists
             stylists = Stylist.get_active(self.session)
             if not stylists:
-                print("❌ No active stylists available. Please add a stylist first.")
+                print("No active stylists available. Please add a stylist first.")
                 return
             
-            print("\n💇 Available Stylists:")
+            print("\nAvailable Stylists:")
             for stylist in stylists:
                 print(f"  {stylist.id}. {stylist.full_name} ({stylist.specialty})")
             
             stylist_id = int(input("\nSelect Stylist ID: ").strip())
             stylist = Stylist.find_by_id(self.session, stylist_id)
             if not stylist or not stylist.is_active:
-                print(f"❌ No active stylist found with ID {stylist_id}")
+                print(f"No active stylist found with ID {stylist_id}")
                 return
             
             # Show available services
             services = Service.get_active(self.session)
             if not services:
-                print("❌ No active services available. Please add a service first.")
+                print("No active services available. Please add a service first.")
                 return
             
-            print("\n✂️ Available Services:")
+            print("\nAvailable Services:")
             for service in services:
                 print(f"  {service.id}. {service.name} (${service.price}, {service.duration_minutes}min)")
             
             service_id = int(input("\nSelect Service ID: ").strip())
             service = Service.find_by_id(self.session, service_id)
             if not service or not service.is_active:
-                print(f"❌ No active service found with ID {service_id}")
+                print(f"No active service found with ID {service_id}")
                 return
             
             # Get appointment date and time
@@ -1151,7 +1151,7 @@ class SalonProCLI:
             time_str = input("Appointment Time (HH:MM in 24-hour format): ").strip()
             
             if not date_str or not time_str:
-                print("❌ Date and time are required.")
+                print("Date and time are required.")
                 return
             
             # Parse date and time
@@ -1160,17 +1160,17 @@ class SalonProCLI:
                 hour, minute = map(int, time_str.split(':'))
                 appointment_datetime = datetime(year, month, day, hour, minute)
             except ValueError:
-                print("❌ Invalid date or time format.")
+                print("Invalid date or time format.")
                 return
             
             # Check if appointment is in the past
             if appointment_datetime < datetime.now():
-                print("❌ Cannot schedule appointments in the past.")
+                print("Cannot schedule appointments in the past.")
                 return
             
             # Check business hours (9 AM to 6 PM)
             if hour < 9 or hour >= 18:
-                print("❌ Appointments can only be scheduled between 9 AM and 6 PM.")
+                print("Appointments can only be scheduled between 9 AM and 6 PM.")
                 return
             
             notes = input("Notes (optional): ").strip() or None
@@ -1187,7 +1187,7 @@ class SalonProCLI:
                 notes=notes
             )
             
-            print(f"\n✅ Appointment scheduled successfully!")
+            print(f"\nAppointment scheduled successfully!")
             print(f"   ID: {appointment.id}")
             print(f"   Client: {client.full_name}")
             print(f"   Stylist: {stylist.full_name}")
@@ -1197,9 +1197,9 @@ class SalonProCLI:
             print(f"   Price: ${service.price:.2f}")
             
         except ValueError as e:
-            print(f"❌ Error: {e}")
+            print(f"Error: {e}")
         except Exception as e:
-            print(f"❌ Error scheduling appointment: {e}")
+            print(f"Error scheduling appointment: {e}")
     
     def find_appointment_by_id(self):
         """Find an appointment by its ID."""
@@ -1210,31 +1210,31 @@ class SalonProCLI:
             if appointment:
                 self.display_appointment_details(appointment)
             else:
-                print(f"❌ No appointment found with ID {appointment_id}")
+                print(f"No appointment found with ID {appointment_id}")
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
     
     def find_appointments_by_date(self):
         """Find appointments on a specific date."""
         date_str = input("\nEnter date (YYYY-MM-DD): ").strip()
         if not date_str:
-            print("❌ Please enter a date.")
+            print("Please enter a date.")
             return
         
         try:
             year, month, day = map(int, date_str.split('-'))
             search_date = date(year, month, day)
         except ValueError:
-            print("❌ Invalid date format. Use YYYY-MM-DD.")
+            print("Invalid date format. Use YYYY-MM-DD.")
             return
         
         appointments = Appointment.find_by_date(self.session, search_date)
         
         if not appointments:
-            print(f"\n📭 No appointments found on {date_str}")
+            print(f"\nNo appointments found on {date_str}")
             return
         
-        print(f"\n📅 APPOINTMENTS ON {date_str} ({len(appointments)} total)")
+        print(f"\nAPPOINTMENTS ON {date_str} ({len(appointments)} total)")
         print("-" * 100)
         print(f"{'Time':<10} {'Client':<20} {'Stylist':<20} {'Service':<25} {'Status':<12} {'Price':<10}")
         print("-" * 100)
@@ -1252,16 +1252,16 @@ class SalonProCLI:
             client = Client.find_by_id(self.session, client_id)
             
             if not client:
-                print(f"❌ No client found with ID {client_id}")
+                print(f"No client found with ID {client_id}")
                 return
             
             appointments = Appointment.find_by_client(self.session, client_id)
             
             if not appointments:
-                print(f"\n📭 No appointments found for {client.full_name}")
+                print(f"\nNo appointments found for {client.full_name}")
                 return
             
-            print(f"\n📅 APPOINTMENTS FOR {client.full_name.upper()} ({len(appointments)} total)")
+            print(f"\nAPPOINTMENTS FOR {client.full_name.upper()} ({len(appointments)} total)")
             print("-" * 100)
             print(f"{'Date':<12} {'Time':<10} {'Stylist':<20} {'Service':<25} {'Status':<12} {'Price':<10}")
             print("-" * 100)
@@ -1272,7 +1272,7 @@ class SalonProCLI:
                 print(f"{app.date_only:<12} {app.time_only:<10} {stylist_name:<20} {service_name:<25} {app.status:<12} ${app.total_price:<9.2f}")
                 
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
     
     def find_appointments_by_stylist(self):
         """Find appointments for a specific stylist."""
@@ -1281,16 +1281,16 @@ class SalonProCLI:
             stylist = Stylist.find_by_id(self.session, stylist_id)
             
             if not stylist:
-                print(f"❌ No stylist found with ID {stylist_id}")
+                print(f"No stylist found with ID {stylist_id}")
                 return
             
             appointments = Appointment.find_by_stylist(self.session, stylist_id)
             
             if not appointments:
-                print(f"\n📭 No appointments found for {stylist.full_name}")
+                print(f"\nNo appointments found for {stylist.full_name}")
                 return
             
-            print(f"\n📅 APPOINTMENTS FOR {stylist.full_name.upper()} ({len(appointments)} total)")
+            print(f"\nAPPOINTMENTS FOR {stylist.full_name.upper()} ({len(appointments)} total)")
             print("-" * 100)
             print(f"{'Date':<12} {'Time':<10} {'Client':<20} {'Service':<25} {'Status':<12} {'Price':<10}")
             print("-" * 100)
@@ -1301,11 +1301,11 @@ class SalonProCLI:
                 print(f"{app.date_only:<12} {app.time_only:<10} {client_name:<20} {service_name:<25} {app.status:<12} ${app.total_price:<9.2f}")
                 
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
     
     def display_appointment_details(self, appointment):
         """Display detailed information about an appointment."""
-        print(f"\n📄 APPOINTMENT DETAILS")
+        print(f"\nAPPOINTMENT DETAILS")
         print("-" * 40)
         print(f"ID: {appointment.id}")
         print(f"Date & Time: {appointment.formatted_date}")
@@ -1317,21 +1317,21 @@ class SalonProCLI:
         
         # Client information
         if appointment.client:
-            print(f"\n👥 CLIENT:")
+            print(f"\nCLIENT:")
             print(f"  Name: {appointment.client.full_name}")
             print(f"  Phone: {appointment.client.formatted_phone}")
             print(f"  Email: {appointment.client.email or 'Not provided'}")
         
         # Stylist information
         if appointment.stylist:
-            print(f"\n💇 STYLIST:")
+            print(f"\nSTYLIST:")
             print(f"  Name: {appointment.stylist.full_name}")
             print(f"  Specialty: {appointment.stylist.specialty}")
             print(f"  Hourly Rate: ${appointment.stylist.hourly_rate:.2f}")
         
         # Service information
         if appointment.service:
-            print(f"\n✂️ SERVICE:")
+            print(f"\nSERVICE:")
             print(f"  Name: {appointment.service.name}")
             print(f"  Category: {appointment.service.category}")
             print(f"  Duration: {appointment.service.formatted_duration}")
@@ -1344,35 +1344,35 @@ class SalonProCLI:
             appointment = Appointment.find_by_id(self.session, appointment_id)
             
             if not appointment:
-                print(f"❌ No appointment found with ID {appointment_id}")
+                print(f"No appointment found with ID {appointment_id}")
                 return
             
             self.display_appointment_details(appointment)
-            print("\n🔄 UPDATE STATUS")
+            print("\nUPDATE STATUS")
             print("-" * 40)
             print("Available statuses: scheduled, completed, cancelled, no-show")
             
             new_status = input(f"New Status [{appointment.status}]: ").strip().lower()
             if not new_status:
-                print("ℹ️  No change made.")
+                print("No change made.")
                 return
             
             # Validate status
             valid_statuses = ['scheduled', 'completed', 'cancelled', 'no-show']
             if new_status not in valid_statuses:
-                print(f"❌ Invalid status. Must be one of: {', '.join(valid_statuses)}")
+                print(f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
                 return
             
             # Update the appointment
             appointment.status = new_status
             self.session.commit()
             
-            print(f"\n✅ Appointment {appointment_id} status updated to '{new_status}'")
+            print(f"\nAppointment {appointment_id} status updated to '{new_status}'")
             
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
         except Exception as e:
-            print(f"❌ Error updating appointment: {e}")
+            print(f"Error updating appointment: {e}")
     
     def cancel_appointment(self):
         """Cancel an appointment."""
@@ -1381,29 +1381,29 @@ class SalonProCLI:
             appointment = Appointment.find_by_id(self.session, appointment_id)
             
             if not appointment:
-                print(f"❌ No appointment found with ID {appointment_id}")
+                print(f"No appointment found with ID {appointment_id}")
                 return
             
             # Show appointment details first
             self.display_appointment_details(appointment)
             
             if appointment.status == 'cancelled':
-                print(f"\nℹ️  Appointment is already cancelled.")
+                print(f"\nAppointment is already cancelled.")
                 return
             
             # Ask for confirmation
-            confirm = input(f"\n⚠️  Are you sure you want to cancel this appointment? (yes/no): ").strip().lower()
+            confirm = input(f"\nAre you sure you want to cancel this appointment? (yes/no): ").strip().lower()
             
             if confirm == 'yes':
                 if Appointment.cancel(self.session, appointment_id):
-                    print(f"✅ Appointment {appointment_id} cancelled successfully!")
+                    print(f"Appointment {appointment_id} cancelled successfully!")
                 else:
-                    print(f"❌ Failed to cancel appointment.")
+                    print(f"Failed to cancel appointment.")
             else:
-                print("❌ Cancellation cancelled.")
+                print("Cancellation cancelled.")
                 
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
     
     def delete_appointment(self):
         """Delete an appointment."""
@@ -1412,31 +1412,31 @@ class SalonProCLI:
             appointment = Appointment.find_by_id(self.session, appointment_id)
             
             if not appointment:
-                print(f"❌ No appointment found with ID {appointment_id}")
+                print(f"No appointment found with ID {appointment_id}")
                 return
             
             # Show appointment details first
             self.display_appointment_details(appointment)
             
             # Ask for confirmation
-            confirm = input(f"\n⚠️  Are you sure you want to DELETE this appointment? This cannot be undone. (yes/no): ").strip().lower()
+            confirm = input(f"\nAre you sure you want to DELETE this appointment? This cannot be undone. (yes/no): ").strip().lower()
             
             if confirm == 'yes':
                 if Appointment.delete(self.session, appointment_id):
-                    print(f"✅ Appointment {appointment_id} deleted successfully!")
+                    print(f"Appointment {appointment_id} deleted successfully!")
                 else:
-                    print(f"❌ Failed to delete appointment.")
+                    print(f"Failed to delete appointment.")
             else:
-                print("❌ Deletion cancelled.")
+                print("Deletion cancelled.")
                 
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print("Please enter a valid number.")
 
              # ========== REPORT METHODS ==========
     
     def handle_reports(self):
         """Handle reports and analytics."""
-        print("\n📊 REPORTS & ANALYTICS")
+        print("\nREPORTS & ANALYTICS")
         print("-" * 40)
         print("1. Daily Revenue Report")
         print("2. Client Count Report")
@@ -1458,27 +1458,27 @@ class SalonProCLI:
         elif choice == "5":
             return
         else:
-            print("❌ Invalid choice.")
+            print("Invalid choice.")
     
     def daily_revenue_report(self):
         """Generate daily revenue report."""
         date_str = input("\nEnter date for report (YYYY-MM-DD): ").strip()
         if not date_str:
-            print("❌ Please enter a date.")
+            print("Please enter a date.")
             return
         
         try:
             year, month, day = map(int, date_str.split('-'))
             report_date = date(year, month, day)
         except ValueError:
-            print("❌ Invalid date format. Use YYYY-MM-DD.")
+            print("Invalid date format. Use YYYY-MM-DD.")
             return
         
         # Get appointments for the date
         appointments = Appointment.find_by_date(self.session, report_date)
         completed_appointments = [app for app in appointments if app.status == 'completed']
         
-        print(f"\n💰 DAILY REVENUE REPORT - {date_str}")
+        print(f"\nDAILY REVENUE REPORT - {date_str}")
         print("=" * 60)
         print(f"Total Appointments: {len(appointments)}")
         print(f"Completed Appointments: {len(completed_appointments)}")
@@ -1488,7 +1488,7 @@ class SalonProCLI:
             total_revenue = sum(app.total_price for app in completed_appointments)
             print(f"\nTotal Revenue: ${total_revenue:.2f}")
             
-            print(f"\n📋 Breakdown by Service:")
+            print(f"\nBreakdown by Service:")
             print("-" * 50)
             
             # Group by service
@@ -1507,7 +1507,7 @@ class SalonProCLI:
         """Generate client count report."""
         clients = Client.get_all(self.session)
         
-        print(f"\n👥 CLIENT COUNT REPORT")
+        print(f"\nCLIENT COUNT REPORT")
         print("=" * 60)
         print(f"Total Clients: {len(clients)}")
         
@@ -1537,7 +1537,7 @@ class SalonProCLI:
         """Generate stylist performance report."""
         stylists = Stylist.get_all(self.session)
         
-        print(f"\n💇 STYLIST PERFORMANCE REPORT")
+        print(f"\nSTYLIST PERFORMANCE REPORT")
         print("=" * 80)
         print(f"{'Name':<20} {'Specialty':<15} {'Total Appts':<12} {'Completed':<12} {'Revenue':<12} {'Avg/Appt':<12}")
         print("=" * 80)
@@ -1568,11 +1568,11 @@ class SalonProCLI:
             elif choice == "3":
                 self.search_revenue_by_date()
             else:
-                print("❌ Invalid choice. Please enter a number between 1-4.")
+                print("Invalid choice. Please enter a number between 1-4.")
     
     def search_clients(self):
         """Search clients by various criteria."""
-        print("\n🔍 SEARCH CLIENTS")
+        print("\nSEARCH CLIENTS")
         print("-" * 40)
         print("1. By Name")
         print("2. By Phone")
@@ -1587,12 +1587,12 @@ class SalonProCLI:
             clients = Client.find_by_name(self.session, name)
             
             if clients:
-                print(f"\n🔍 FOUND {len(clients)} CLIENT(S)")
+                print(f"\nFOUND {len(clients)} CLIENT(S)")
                 print("-" * 70)
                 for client in clients:
                     print(f"ID: {client.id} | Name: {client.full_name} | Phone: {client.formatted_phone} | Email: {client.email or 'N/A'}")
             else:
-                print(f"❌ No clients found matching '{name}'")
+                print(f"No clients found matching '{name}'")
                 
         elif choice == "2":
             phone = input("Enter phone to search: ").strip()
@@ -1601,28 +1601,28 @@ class SalonProCLI:
             if client:
                 self.display_client_details(client)
             else:
-                print(f"❌ No client found with phone {phone}")
+                print(f"No client found with phone {phone}")
                 
         elif choice == "3":
             email = input("Enter email to search: ").strip()
             clients = self.session.query(Client).filter(Client.email.ilike(f"%{email}%")).all()
             
             if clients:
-                print(f"\n🔍 FOUND {len(clients)} CLIENT(S)")
+                print(f"\nFOUND {len(clients)} CLIENT(S)")
                 print("-" * 70)
                 for client in clients:
                     print(f"ID: {client.id} | Name: {client.full_name} | Phone: {client.formatted_phone} | Email: {client.email}")
             else:
-                print(f"❌ No clients found with email containing '{email}'")
+                print(f"No clients found with email containing '{email}'")
                 
         elif choice == "4":
             return
         else:
-            print("❌ Invalid choice.")
+            print("Invalid choice.")
     
     def search_appointments_by_date_range(self):
         """Search appointments within a date range."""
-        print("\n🔍 SEARCH APPOINTMENTS BY DATE RANGE")
+        print("\nSEARCH APPOINTMENTS BY DATE RANGE")
         print("-" * 40)
         
         try:
@@ -1630,7 +1630,7 @@ class SalonProCLI:
             end_str = input("End Date (YYYY-MM-DD): ").strip()
             
             if not start_str or not end_str:
-                print("❌ Both start and end dates are required.")
+                print("Both start and end dates are required.")
                 return
             
             # Parse dates
@@ -1641,7 +1641,7 @@ class SalonProCLI:
             end_date = date(end_year, end_month, end_day)
             
             if start_date > end_date:
-                print("❌ Start date must be before end date.")
+                print("Start date must be before end date.")
                 return
             
             # Query appointments in date range
@@ -1654,10 +1654,10 @@ class SalonProCLI:
             ).all()
             
             if not appointments:
-                print(f"\n📭 No appointments found between {start_str} and {end_str}")
+                print(f"\nNo appointments found between {start_str} and {end_str}")
                 return
             
-            print(f"\n📅 APPOINTMENTS BETWEEN {start_str} AND {end_str} ({len(appointments)} total)")
+            print(f"\nAPPOINTMENTS BETWEEN {start_str} AND {end_str} ({len(appointments)} total)")
             print("-" * 100)
             print(f"{'Date':<12} {'Time':<10} {'Client':<20} {'Stylist':<20} {'Service':<20} {'Status':<12} {'Price':<10}")
             print("-" * 100)
@@ -1669,13 +1669,13 @@ class SalonProCLI:
                 print(f"{app.date_only:<12} {app.time_only:<10} {client_name:<20} {stylist_name:<20} {service_name:<20} {app.status:<12} ${app.total_price:<9.2f}")
                 
         except ValueError:
-            print("❌ Invalid date format. Use YYYY-MM-DD.")
+            print("Invalid date format. Use YYYY-MM-DD.")
         except Exception as e:
-            print(f"❌ Error: {e}")
+            print(f"Error: {e}")
     
     def search_revenue_by_date(self):
         """Search revenue by date."""
-        print("\n💰 SEARCH REVENUE BY DATE")
+        print("\nSEARCH REVENUE BY DATE")
         print("-" * 40)
         
         try:
@@ -1683,7 +1683,7 @@ class SalonProCLI:
             end_str = input("End Date (YYYY-MM-DD): ").strip()
             
             if not start_str or not end_str:
-                print("❌ Both start and end dates are required.")
+                print("Both start and end dates are required.")
                 return
             
             # Parse dates
@@ -1694,7 +1694,7 @@ class SalonProCLI:
             end_date = date(end_year, end_month, end_day)
             
             if start_date > end_date:
-                print("❌ Start date must be before end date.")
+                print("Start date must be before end date.")
                 return
             
             # Calculate total revenue for the period
@@ -1709,22 +1709,22 @@ class SalonProCLI:
                     daily_revenues.append((current_date, daily_rev))
                 current_date += timedelta(days=1)
             
-            print(f"\n💰 REVENUE REPORT: {start_str} TO {end_str}")
+            print(f"\nREVENUE REPORT: {start_str} TO {end_str}")
             print("=" * 60)
             print(f"Total Revenue: ${total_revenue:.2f}")
             print(f"Days with Revenue: {len(daily_revenues)}")
             print(f"Days in Period: {(end_date - start_date).days + 1}")
             
             if daily_revenues:
-                print(f"\n📅 Daily Breakdown:")
+                print(f"\nDaily Breakdown:")
                 print("-" * 30)
                 for day, rev in sorted(daily_revenues, key=lambda x: x[1], reverse=True):
                     print(f"  {day.strftime('%Y-%m-%d')}: ${rev:.2f}")
                     
         except ValueError:
-            print("❌ Invalid date format. Use YYYY-MM-DD.")
+            print("Invalid date format. Use YYYY-MM-DD.")
         except Exception as e:
-            print(f"❌ Error: {e}")
+            print(f"Error: {e}")
                         
 def main():
     """Main function to run the CLI."""
